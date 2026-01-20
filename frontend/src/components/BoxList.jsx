@@ -1,0 +1,292 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { API } from "@/App";
+import { toast } from "sonner";
+import { Package, Plus, Trash2, Edit2, MapPin, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+export const BoxList = () => {
+  const [boxes, setBoxes] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingBox, setEditingBox] = useState(null);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [formData, setFormData] = useState({ name: "", category_id: "", location: "" });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [boxesRes, categoriesRes] = await Promise.all([
+        axios.get(`${API}/boxes`),
+        axios.get(`${API}/categories`)
+      ]);
+      setBoxes(boxesRes.data);
+      setCategories(categoriesRes.data);
+    } catch (error) {
+      toast.error("Errore nel caricamento dati");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingBox) {
+        await axios.put(`${API}/boxes/${editingBox.id}`, formData);
+        toast.success("Scatola modificata");
+      } else {
+        await axios.post(`${API}/boxes`, formData);
+        toast.success("Scatola creata");
+      }
+      setIsDialogOpen(false);
+      setEditingBox(null);
+      setFormData({ name: "", category_id: "", location: "" });
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Errore");
+    }
+  };
+
+  const handleDelete = async (boxId) => {
+    try {
+      await axios.delete(`${API}/boxes/${boxId}`);
+      toast.success("Scatola eliminata");
+      fetchData();
+    } catch (error) {
+      toast.error("Errore nell'eliminazione");
+    }
+  };
+
+  const openEditDialog = (box) => {
+    setEditingBox(box);
+    setFormData({
+      name: box.name,
+      category_id: box.category_id || "",
+      location: box.location || ""
+    });
+    setIsDialogOpen(true);
+  };
+
+  const openNewDialog = () => {
+    setEditingBox(null);
+    setFormData({ name: "", category_id: "", location: "" });
+    setIsDialogOpen(true);
+  };
+
+  const getCategoryName = (categoryId) => {
+    const cat = categories.find(c => c.id === categoryId);
+    return cat ? cat.name : null;
+  };
+
+  const getCategoryColor = (categoryId) => {
+    const cat = categories.find(c => c.id === categoryId);
+    return cat ? cat.color : "#4A6741";
+  };
+
+  const filteredBoxes = filterCategory === "all" 
+    ? boxes 
+    : boxes.filter(b => b.category_id === filterCategory);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 animate-slide-in-up" data-testid="box-list">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Scatole</h1>
+          <p className="text-muted-foreground mt-1">{boxes.length} scatole nel tuo archivio</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-[180px] rounded-full" data-testid="filter-category">
+              <SelectValue placeholder="Tutte le categorie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte le categorie</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-box-btn">
+                <Plus size={18} />
+                Nuova Scatola
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{editingBox ? "Modifica Scatola" : "Nuova Scatola"}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Nome</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="es. Libri Camera"
+                    required
+                    className="mt-1"
+                    data-testid="box-name-input"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Categoria</Label>
+                  <Select 
+                    value={formData.category_id} 
+                    onValueChange={(val) => setFormData({ ...formData, category_id: val === "none" ? "" : val })}
+                  >
+                    <SelectTrigger className="mt-1" data-testid="box-category-select">
+                      <SelectValue placeholder="Seleziona categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nessuna categoria</SelectItem>
+                      {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="location">Posizione</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="es. Cantina, Scaffale 3"
+                    className="mt-1"
+                    data-testid="box-location-input"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full">
+                    Annulla
+                  </Button>
+                  <Button type="submit" className="rounded-full" data-testid="save-box-btn">
+                    {editingBox ? "Salva" : "Crea"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Box Grid */}
+      {filteredBoxes.length === 0 ? (
+        <div className="empty-state py-16">
+          <Package className="text-muted-foreground/50 mb-4" size={64} />
+          <h3 className="text-xl font-semibold mb-2">Nessuna scatola</h3>
+          <p className="text-muted-foreground mb-4">Crea la tua prima scatola per iniziare</p>
+          <Button className="rounded-full" onClick={openNewDialog}>
+            <Plus size={18} className="mr-2" />
+            Nuova Scatola
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredBoxes.map((box, index) => (
+            <Card 
+              key={box.id} 
+              className={`card-hover border-border/50 bg-card/50 backdrop-blur-sm group stagger-${(index % 5) + 1} opacity-0 animate-slide-in-up`}
+              data-testid={`box-card-${box.box_number}`}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <span className="font-mono font-bold text-primary text-lg">#{box.box_number}</span>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openEditDialog(box)}
+                      data-testid={`edit-box-${box.box_number}`}
+                    >
+                      <Edit2 size={16} />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" data-testid={`delete-box-${box.box_number}`}>
+                          <Trash2 size={16} className="text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Eliminare la scatola?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Questa azione è irreversibile. Tutti gli oggetti nella scatola verranno eliminati.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDelete(box.id)}
+                            className="rounded-full bg-destructive"
+                            data-testid={`confirm-delete-${box.box_number}`}
+                          >
+                            Elimina
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{box.name}</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                  <Package size={14} />
+                  <span>{box.items?.length || 0} oggetti</span>
+                </div>
+                {box.location && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                    <MapPin size={14} />
+                    <span>{box.location}</span>
+                  </div>
+                )}
+                {getCategoryName(box.category_id) && (
+                  <div 
+                    className="inline-flex px-3 py-1 rounded-full text-xs font-medium mb-4"
+                    style={{ 
+                      backgroundColor: `${getCategoryColor(box.category_id)}20`,
+                      color: getCategoryColor(box.category_id)
+                    }}
+                  >
+                    {getCategoryName(box.category_id)}
+                  </div>
+                )}
+                <Link 
+                  to={`/boxes/${box.id}`} 
+                  className="flex items-center justify-between pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
+                >
+                  Visualizza contenuto
+                  <ArrowRight size={16} />
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

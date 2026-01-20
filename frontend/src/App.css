@@ -1,34 +1,36 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* App specific styles */
+.App {
+    min-height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
+/* Bento grid layout */
+.bento-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 768px) {
+    .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
+@media (min-width: 1024px) {
+    .bento-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .bento-span-2 {
+        grid-column: span 2;
+    }
+}
+
+/* Empty state */
+.empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
-}
-
-.App-link {
-    color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+    padding: 4rem 2rem;
+    text-align: center;
 }
