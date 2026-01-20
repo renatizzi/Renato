@@ -1,0 +1,109 @@
+{
+  "identity": {
+    "name": "Archivio Oggetti Personali",
+    "persona": "E1: The Anti-AI Designer",
+    "tone": "Organic, Organized, Calm, Efficient",
+    "archetype": "The Soft Utility"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["600", "800"],
+      "usage": "Use for all page titles, section headers, and modal titles. Tracking tight."
+    },
+    "body": {
+      "font_family": "IBM Plex Sans, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Use for all standard text, inputs, and data tables."
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Use for Box IDs, Timestamps, and SKU-like data."
+    }
+  },
+  "colors": {
+    "theme": "Organic & Earthy",
+    "palette": {
+      "primary": "#4A6741",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#E8ECE6",
+      "secondary_foreground": "#2C332B",
+      "background": "#F9F9F7",
+      "foreground": "#2C332B",
+      "muted": "#EFEFE9",
+      "muted_foreground": "#787D75",
+      "accent": "#D4A373",
+      "accent_foreground": "#FFFFFF",
+      "border": "#E2E2DC",
+      "input": "#FFFFFF",
+      "ring": "#4A6741"
+    },
+    "chart_colors": {
+      "1": "#4A6741",
+      "2": "#D4A373",
+      "3": "#8C9E85",
+      "4": "#E6B89C",
+      "5": "#2C332B"
+    }
+  },
+  "layout": {
+    "spacing_scale": "Generous (2x standard)",
+    "container_padding": "p-6 md:p-12",
+    "grid_system": {
+      "dashboard": "Bento Grid (Mode A)",
+      "list_view": "Dense Grid (Mode B)"
+    },
+    "border_radius": {
+      "default": "rounded-xl",
+      "card": "rounded-2xl",
+      "button": "rounded-full"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "Pill-shaped (rounded-full)",
+      "hover": "transform -translate-y-0.5 transition-transform duration-200"
+    },
+    "cards": {
+      "style": "Flat with subtle border, no shadow by default. Hover: shadow-lg transition-all duration-300",
+      "background": "bg-white/50 backdrop-blur-sm"
+    },
+    "inputs": {
+      "style": "Minimalist, border-b-2 focus:border-primary focus:ring-0 bg-transparent px-0 rounded-none"
+    },
+    "modals": {
+      "style": "Glassmorphism overlay (backdrop-blur-md)"
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Subtle grain overlay on the main background to give a 'paper' feel.",
+    "shadows": "Soft, diffuse shadows (shadow-[0_8px_30px_rgb(0,0,0,0.04)])",
+    "micro_interactions": "Buttons scale down slightly on click. List items slide in staggered."
+  },
+  "motion": {
+    "transitions": "transition-all duration-300 ease-out",
+    "entrance": "animate-in fade-in slide-in-from-bottom-4 duration-500",
+    "hover": "hover:scale-[1.02] active:scale-[0.98]"
+  },
+  "image_urls": {
+    "dashboard_hero": "https://images.pexels.com/photos/14474007/pexels-photo-14474007.jpeg",
+    "empty_state_box": "https://images.pexels.com/photos/6169020/pexels-photo-6169020.jpeg",
+    "item_placeholder_1": "https://images.pexels.com/photos/19238352/pexels-photo-19238352.jpeg",
+    "item_placeholder_2": "https://images.pexels.com/photos/19238353/pexels-photo-19238353.jpeg"
+  },
+  "instructions_to_main_agent": {
+    "general": "Build a responsive, accessible personal inventory app. Use the provided color palette to override Tailwind defaults in index.css. Implement the 'Bento' grid for the dashboard.",
+    "voice_search": "Implement Web Speech API. Create a visual indicator (pulsing mic icon) when listening. Fallback to text input if API is unavailable.",
+    "printing": "Create a specific 'Print View' component that strips navigation and styles the list for A4 paper using @media print CSS.",
+    "data_management": "Use local state or context for the prototype. Ensure Box IDs are auto-generated and unique.",
+    "accessibility": "Ensure all text meets APCA contrast standards against the 'Bone White' background. Use semantic HTML."
+  },
+  "universal_guidelines": [
+    "Do not use generic centered layouts.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Every interaction needs micro-animations.",
+    "Use 'sonner' for toasts.",
+    "Components MUST use named exports.",
+    "Pages MUST use default exports."
+  ]
+}
