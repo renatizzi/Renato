@@ -293,6 +293,11 @@ class ArchiveAPITester:
                 print("❌ Root endpoint failed, stopping tests")
                 return False
             
+            # Authentication tests (new feature)
+            if not self.test_auth_functionality():
+                print("❌ Authentication failed")
+                return False
+            
             # Stats endpoint
             if not self.test_stats_endpoint():
                 print("❌ Stats endpoint failed")
@@ -308,9 +313,19 @@ class ArchiveAPITester:
                 print("❌ Box operations failed")
                 return False
             
+            # Location filter tests (new feature)
+            if not self.test_location_filter():
+                print("❌ Location filter failed")
+                return False
+            
             # Item operations
             if not self.test_item_crud():
                 print("❌ Item operations failed")
+                return False
+            
+            # Image URL functionality (new feature)
+            if not self.test_image_url_functionality():
+                print("❌ Image URL functionality failed")
                 return False
             
             # Search functionality
