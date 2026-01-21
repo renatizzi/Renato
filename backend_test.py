@@ -262,6 +262,77 @@ class ArchiveAPITester:
         success, _ = self.run_test("Export CSV", "GET", "export/csv", 200)
         return success
 
+    def test_password_management(self):
+        """Test password change and reset functionality"""
+        print("\n🔑 Testing Password Management...")
+        
+        # Test change password with correct current password
+        change_data = {
+            "current_password": "archivio2025",
+            "new_password": "newpass123"
+        }
+        success, response = self.run_test("Change Password", "POST", "auth/change-password", 200, change_data)
+        if not success:
+            return False
+        
+        # Test login with new password
+        auth_data = {"password": "newpass123"}
+        success, _ = self.run_test("Login with new password", "POST", "auth/verify", 200, auth_data)
+        if not success:
+            return False
+        
+        # Test change password with wrong current password
+        wrong_change_data = {
+            "current_password": "wrongpass",
+            "new_password": "anotherpass"
+        }
+        success, _ = self.run_test("Change password with wrong current", "POST", "auth/change-password", 401, wrong_change_data)
+        if success:  # We expect this to fail (401)
+            self.tests_passed += 1
+            print("✅ Passed - Wrong current password correctly rejected")
+        else:
+            print("❌ Failed - Wrong current password should return 401")
+            return False
+        
+        # Test password reset with correct master password
+        reset_data = {"master_password": "masterreset2025"}
+        success, response = self.run_test("Reset password with master", "POST", "auth/reset-password", 200, reset_data)
+        if not success:
+            return False
+        
+        # Test password reset with wrong master password
+        wrong_reset_data = {"master_password": "wrongmaster"}
+        success, _ = self.run_test("Reset password with wrong master", "POST", "auth/reset-password", 401, wrong_reset_data)
+        if success:  # We expect this to fail (401)
+            self.tests_passed += 1
+            print("✅ Passed - Wrong master password correctly rejected")
+        else:
+            print("❌ Failed - Wrong master password should return 401")
+            return False
+        
+        # Verify password was reset to default
+        auth_data = {"password": "archivio2025"}
+        success, _ = self.run_test("Login with reset password", "POST", "auth/verify", 200, auth_data)
+        if not success:
+            return False
+        
+        return True
+
+    def test_backup_restore(self):
+        """Test backup and restore functionality"""
+        print("\n💾 Testing Backup & Restore...")
+        
+        # Test backup endpoint
+        success, response = self.run_test("Get Backup", "GET", "backup", 200)
+        if not success:
+            return False
+        
+        # Note: We can't easily test restore without file upload in this simple test
+        # The restore endpoint requires multipart/form-data which is more complex
+        print("ℹ️  Restore endpoint testing requires file upload - will be tested in frontend")
+        
+        return True
+
     def cleanup(self):
         """Clean up created test data"""
         print("\n🧹 Cleaning up test data...")
