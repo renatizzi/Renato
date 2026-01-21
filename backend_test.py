@@ -409,6 +409,16 @@ class ArchiveAPITester:
                 print("❌ Export functionality failed")
                 return False
             
+            # Password management (new feature)
+            if not self.test_password_management():
+                print("❌ Password management failed")
+                return False
+            
+            # Backup & restore (new feature)
+            if not self.test_backup_restore():
+                print("❌ Backup & restore failed")
+                return False
+            
             return True
             
         finally:
