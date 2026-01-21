@@ -52,12 +52,19 @@ App per gestire un archivio di oggetti personali con numerazione univoca scatole
 - Logout funzionalità
 - Immagini visibili nei risultati di ricerca
 
+## What's Implemented (21 Gen 2025) - Update 2
+- **Gestione Password**: Modifica password, reset con master password (masterreset2025)
+- **Descrizione Funzioni**: Home page con 6 card che descrivono le funzionalità principali
+- **Backup/Ripristino**: Export/import completo archivio in formato JSON
+- **Pagina Impostazioni**: Nuova sezione per gestire password e backup
+- Password salvata in MongoDB (modificabile a runtime)
+
 ## Backlog / Next Features (P0-P2)
 ### P1
 - Ordinamento risultati ricerca
 - Upload file immagini (storage server)
 
 ### P2
-- Backup/restore database
 - Dark mode
 - Condivisione archivio con altri utenti
+- Notifiche per scatole non aggiornate da tempo
