@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
 import { toast } from "sonner";
-import { Search, Mic, MicOff, Package, ArrowRight, X } from "lucide-react";
+import { Search, Mic, MicOff, Package, ArrowRight, X, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +19,6 @@ export const SearchPage = () => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    // Check for Web Speech API support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       setSpeechSupported(true);
@@ -32,7 +31,6 @@ export const SearchPage = () => {
         const transcript = event.results[0][0].transcript;
         setQuery(transcript);
         setIsListening(false);
-        // Auto-search after voice input
         handleSearch(transcript);
       };
 
@@ -195,7 +193,7 @@ export const SearchPage = () => {
         ) : (
           <div className="space-y-4">
             <p className="text-muted-foreground">{results.length} risultati trovati</p>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {results.map((result, index) => (
                 <Card 
                   key={`${result.box_id}-${result.item_id}`}
@@ -203,35 +201,52 @@ export const SearchPage = () => {
                   data-testid={`search-result-${result.item_id}`}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-lg">{result.item_name}</h4>
-                        {result.item_description && (
-                          <p className="text-muted-foreground mt-1">{result.item_description}</p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
-                          <div className="flex items-center gap-1 text-primary">
-                            <Package size={14} />
-                            <span className="font-mono">Scatola #{result.box_number}</span>
+                    <div className="flex gap-4">
+                      {result.item_image_url ? (
+                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
+                          <img 
+                            src={result.item_image_url} 
+                            alt={result.item_name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                          <Image className="text-muted-foreground" size={20} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold truncate">{result.item_name}</h4>
+                            {result.item_description && (
+                              <p className="text-sm text-muted-foreground line-clamp-1">{result.item_description}</p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                              <div className="flex items-center gap-1 text-primary">
+                                <Package size={12} />
+                                <span className="font-mono">#{result.box_number}</span>
+                              </div>
+                              <span className="text-muted-foreground">{result.box_name}</span>
+                              {result.category_name && (
+                                <span className="px-2 py-0.5 rounded-full bg-secondary">
+                                  {result.category_name}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">{result.box_name}</span>
-                          {result.category_name && (
-                            <>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="px-2 py-0.5 rounded-full bg-secondary text-xs">
-                                {result.category_name}
-                              </span>
-                            </>
-                          )}
+                          <Link 
+                            to={`/boxes/${result.box_id}`}
+                            className="ml-2 p-2 rounded-full hover:bg-secondary transition-colors flex-shrink-0"
+                          >
+                            <ArrowRight size={18} className="text-muted-foreground" />
+                          </Link>
                         </div>
                       </div>
-                      <Link 
-                        to={`/boxes/${result.box_id}`}
-                        className="ml-4 p-2 rounded-full hover:bg-secondary transition-colors"
-                      >
-                        <ArrowRight size={20} className="text-muted-foreground" />
-                      </Link>
                     </div>
                   </CardContent>
                 </Card>

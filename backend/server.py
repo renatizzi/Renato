@@ -21,6 +21,9 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# App password from env
+APP_PASSWORD = os.environ.get('APP_PASSWORD', 'archivio2025')
+
 # Create the main app without a prefix
 app = FastAPI()
 
@@ -28,6 +31,9 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # ==================== MODELS ====================
+
+class PasswordCheck(BaseModel):
+    password: str
 
 class CategoryBase(BaseModel):
     name: str
@@ -44,6 +50,7 @@ class CategoryCreate(CategoryBase):
 class ItemBase(BaseModel):
     name: str
     description: Optional[str] = ""
+    image_url: Optional[str] = ""
 
 class Item(ItemBase):
     model_config = ConfigDict(extra="ignore")
@@ -80,6 +87,7 @@ class BoxUpdate(BaseModel):
 class ItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    image_url: Optional[str] = None
 
 class SearchResult(BaseModel):
     box_id: str
@@ -88,7 +96,16 @@ class SearchResult(BaseModel):
     item_id: str
     item_name: str
     item_description: str
+    item_image_url: Optional[str] = None
     category_name: Optional[str] = None
+
+# ==================== AUTH ROUTE ====================
+
+@api_router.post("/auth/verify")
+async def verify_password(input: PasswordCheck):
+    if input.password == APP_PASSWORD:
+        return {"success": True, "message": "Password corretta"}
+    raise HTTPException(status_code=401, detail="Password errata")
 
 # ==================== CATEGORY ROUTES ====================
 
@@ -128,7 +145,6 @@ async def delete_category(category_id: str):
     result = await db.categories.delete_one({"id": category_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Categoria non trovata")
-    # Remove category reference from boxes
     await db.boxes.update_many(
         {"category_id": category_id},
         {"$set": {"category_id": None}}
@@ -142,10 +158,12 @@ async def get_next_box_number():
     return (last_box["box_number"] + 1) if last_box else 1
 
 @api_router.get("/boxes", response_model=List[Box])
-async def get_boxes(category_id: Optional[str] = None):
+async def get_boxes(category_id: Optional[str] = None, location: Optional[str] = None):
     query = {}
     if category_id:
         query["category_id"] = category_id
+    if location:
+        query["location"] = {"$regex": location, "$options": "i"}
     
     boxes = await db.boxes.find(query, {"_id": 0}).sort("box_number", 1).to_list(1000)
     for box in boxes:
@@ -158,9 +176,30 @@ async def get_boxes(category_id: Optional[str] = None):
                 item['created_at'] = datetime.fromisoformat(item['created_at'])
     return boxes
 
+@api_router.get("/boxes/locations")
+async def get_locations():
+    """Get all unique locations for filtering"""
+    boxes = await db.boxes.find({}, {"_id": 0, "location": 1}).to_list(1000)
+    locations = list(set(box.get('location', '') for box in boxes if box.get('location')))
+    return sorted(locations)
+
 @api_router.get("/boxes/{box_id}", response_model=Box)
 async def get_box(box_id: str):
     box = await db.boxes.find_one({"id": box_id}, {"_id": 0})
+    if not box:
+        raise HTTPException(status_code=404, detail="Scatola non trovata")
+    if isinstance(box.get('created_at'), str):
+        box['created_at'] = datetime.fromisoformat(box['created_at'])
+    if isinstance(box.get('updated_at'), str):
+        box['updated_at'] = datetime.fromisoformat(box['updated_at'])
+    for item in box.get('items', []):
+        if isinstance(item.get('created_at'), str):
+            item['created_at'] = datetime.fromisoformat(item['created_at'])
+    return box
+
+@api_router.get("/boxes/by-number/{box_number}", response_model=Box)
+async def get_box_by_number(box_number: int):
+    box = await db.boxes.find_one({"box_number": box_number}, {"_id": 0})
     if not box:
         raise HTTPException(status_code=404, detail="Scatola non trovata")
     if isinstance(box.get('created_at'), str):
@@ -197,7 +236,6 @@ async def update_box(box_id: str, input: BoxUpdate):
     
     update_data = {k: v for k, v in input.model_dump().items() if v is not None}
     
-    # Check if new box_number already exists
     if "box_number" in update_data and update_data["box_number"] != existing["box_number"]:
         conflict = await db.boxes.find_one({"box_number": update_data["box_number"]})
         if conflict:
@@ -267,6 +305,8 @@ async def update_item(box_id: str, item_id: str, input: ItemUpdate):
                 item['name'] = input.name
             if input.description is not None:
                 item['description'] = input.description
+            if input.image_url is not None:
+                item['image_url'] = input.image_url
             item_found = True
             break
     
@@ -344,6 +384,7 @@ async def search_items(q: str = Query(..., min_length=1)):
                     item_id=item['id'],
                     item_name=item['name'],
                     item_description=item.get('description', ''),
+                    item_image_url=item.get('image_url', ''),
                     category_name=categories.get(box.get('category_id'))
                 ))
     
@@ -379,7 +420,7 @@ async def export_csv(box_ids: Optional[str] = None):
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Numero Scatola", "Nome Scatola", "Categoria", "Posizione", "Nome Oggetto", "Descrizione", "Data Inserimento"])
+    writer.writerow(["Numero Scatola", "Nome Scatola", "Categoria", "Posizione", "Nome Oggetto", "Descrizione", "URL Immagine", "Data Inserimento"])
     
     for box in boxes:
         category_name = categories.get(box.get('category_id'), "")
@@ -389,6 +430,7 @@ async def export_csv(box_ids: Optional[str] = None):
                 box['name'],
                 category_name,
                 box.get('location', ''),
+                "",
                 "",
                 "",
                 box.get('created_at', '')
@@ -402,6 +444,7 @@ async def export_csv(box_ids: Optional[str] = None):
                     box.get('location', ''),
                     item['name'],
                     item.get('description', ''),
+                    item.get('image_url', ''),
                     item.get('created_at', '')
                 ])
     

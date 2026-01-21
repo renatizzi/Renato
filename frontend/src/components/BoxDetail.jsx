@@ -5,7 +5,8 @@ import { API } from "@/App";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Package, Plus, Trash2, Edit2, ArrowLeft, MapPin, Calendar, Save, X } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { Package, Plus, Trash2, Edit2, ArrowLeft, MapPin, Calendar, Save, QrCode, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,8 +24,9 @@ export const BoxDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isEditBoxDialogOpen, setIsEditBoxDialogOpen] = useState(false);
+  const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [itemForm, setItemForm] = useState({ name: "", description: "" });
+  const [itemForm, setItemForm] = useState({ name: "", description: "", image_url: "" });
   const [boxForm, setBoxForm] = useState({ name: "", category_id: "", location: "", box_number: 0 });
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export const BoxDetail = () => {
       }
       setIsItemDialogOpen(false);
       setEditingItem(null);
-      setItemForm({ name: "", description: "" });
+      setItemForm({ name: "", description: "", image_url: "" });
       fetchData();
     } catch (error) {
       toast.error("Errore nel salvare l'oggetto");
@@ -96,13 +98,17 @@ export const BoxDetail = () => {
 
   const openEditItemDialog = (item) => {
     setEditingItem(item);
-    setItemForm({ name: item.name, description: item.description || "" });
+    setItemForm({ 
+      name: item.name, 
+      description: item.description || "",
+      image_url: item.image_url || ""
+    });
     setIsItemDialogOpen(true);
   };
 
   const openNewItemDialog = () => {
     setEditingItem(null);
-    setItemForm({ name: "", description: "" });
+    setItemForm({ name: "", description: "", image_url: "" });
     setIsItemDialogOpen(true);
   };
 
@@ -116,6 +122,32 @@ export const BoxDetail = () => {
       return format(new Date(dateStr), "d MMM yyyy, HH:mm", { locale: it });
     } catch {
       return dateStr;
+    }
+  };
+
+  const printQRCode = () => {
+    const printWindow = window.open('', '_blank');
+    const qrElement = document.getElementById('qr-code-detail');
+    if (printWindow && qrElement && box) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>QR Code Scatola #${box.box_number}</title>
+            <style>
+              body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
+              h1 { font-size: 24px; margin-bottom: 20px; }
+              .box-number { font-size: 48px; font-weight: bold; margin-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <h1>${box.name}</h1>
+            ${qrElement.outerHTML}
+            <div class="box-number">#${box.box_number}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     }
   };
 
@@ -166,81 +198,111 @@ export const BoxDetail = () => {
                 </div>
               </div>
             </div>
-            <Dialog open={isEditBoxDialogOpen} onOpenChange={setIsEditBoxDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="rounded-full gap-2" data-testid="edit-box-details-btn">
-                  <Edit2 size={16} />
-                  Modifica Scatola
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Modifica Scatola</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleEditBox} className="space-y-4">
-                  <div>
-                    <Label htmlFor="box_number">Numero Scatola</Label>
-                    <Input
-                      id="box_number"
-                      type="number"
-                      value={boxForm.box_number}
-                      onChange={(e) => setBoxForm({ ...boxForm, box_number: parseInt(e.target.value) })}
-                      required
-                      min="1"
-                      className="mt-1"
-                      data-testid="edit-box-number-input"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_name">Nome</Label>
-                    <Input
-                      id="edit_name"
-                      value={boxForm.name}
-                      onChange={(e) => setBoxForm({ ...boxForm, name: e.target.value })}
-                      required
-                      className="mt-1"
-                      data-testid="edit-box-name-input"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_category">Categoria</Label>
-                    <Select 
-                      value={boxForm.category_id} 
-                      onValueChange={(val) => setBoxForm({ ...boxForm, category_id: val === "none" ? "" : val })}
-                    >
-                      <SelectTrigger className="mt-1" data-testid="edit-box-category-select">
-                        <SelectValue placeholder="Seleziona categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nessuna categoria</SelectItem>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_location">Posizione</Label>
-                    <Input
-                      id="edit_location"
-                      value={boxForm.location}
-                      onChange={(e) => setBoxForm({ ...boxForm, location: e.target.value })}
-                      className="mt-1"
-                      data-testid="edit-box-location-input"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setIsEditBoxDialogOpen(false)} className="rounded-full">
-                      Annulla
-                    </Button>
-                    <Button type="submit" className="rounded-full" data-testid="save-box-details-btn">
-                      <Save size={16} className="mr-2" />
-                      Salva
+            <div className="flex gap-2">
+              <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="rounded-full gap-2" data-testid="show-qr-btn">
+                    <QrCode size={16} />
+                    QR Code
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-sm text-center">
+                  <DialogHeader>
+                    <DialogTitle>QR Code Scatola #{box.box_number}</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex flex-col items-center gap-4 py-4">
+                    <div className="p-4 bg-white rounded-2xl">
+                      <QRCodeSVG
+                        id="qr-code-detail"
+                        value={`Scatola #${box.box_number}`}
+                        size={200}
+                        level="H"
+                      />
+                    </div>
+                    <p className="text-3xl font-mono font-bold">#{box.box_number}</p>
+                    <p className="text-muted-foreground">{box.name}</p>
+                    <Button onClick={printQRCode} className="rounded-full w-full">
+                      Stampa QR Code
                     </Button>
                   </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={isEditBoxDialogOpen} onOpenChange={setIsEditBoxDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="rounded-full gap-2" data-testid="edit-box-details-btn">
+                    <Edit2 size={16} />
+                    Modifica
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Modifica Scatola</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleEditBox} className="space-y-4">
+                    <div>
+                      <Label htmlFor="box_number">Numero Scatola</Label>
+                      <Input
+                        id="box_number"
+                        type="number"
+                        value={boxForm.box_number}
+                        onChange={(e) => setBoxForm({ ...boxForm, box_number: parseInt(e.target.value) })}
+                        required
+                        min="1"
+                        className="mt-1"
+                        data-testid="edit-box-number-input"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit_name">Nome</Label>
+                      <Input
+                        id="edit_name"
+                        value={boxForm.name}
+                        onChange={(e) => setBoxForm({ ...boxForm, name: e.target.value })}
+                        required
+                        className="mt-1"
+                        data-testid="edit-box-name-input"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit_category">Categoria</Label>
+                      <Select 
+                        value={boxForm.category_id} 
+                        onValueChange={(val) => setBoxForm({ ...boxForm, category_id: val === "none" ? "" : val })}
+                      >
+                        <SelectTrigger className="mt-1" data-testid="edit-box-category-select">
+                          <SelectValue placeholder="Seleziona categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nessuna categoria</SelectItem>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit_location">Posizione</Label>
+                      <Input
+                        id="edit_location"
+                        value={boxForm.location}
+                        onChange={(e) => setBoxForm({ ...boxForm, location: e.target.value })}
+                        className="mt-1"
+                        data-testid="edit-box-location-input"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <Button type="button" variant="outline" onClick={() => setIsEditBoxDialogOpen(false)} className="rounded-full">
+                        Annulla
+                      </Button>
+                      <Button type="submit" className="rounded-full" data-testid="save-box-details-btn">
+                        <Save size={16} className="mr-2" />
+                        Salva
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -284,6 +346,27 @@ export const BoxDetail = () => {
                   data-testid="item-description-input"
                 />
               </div>
+              <div>
+                <Label htmlFor="item_image_url">URL Immagine (opzionale)</Label>
+                <Input
+                  id="item_image_url"
+                  value={itemForm.image_url}
+                  onChange={(e) => setItemForm({ ...itemForm, image_url: e.target.value })}
+                  placeholder="https://esempio.com/immagine.jpg"
+                  className="mt-1"
+                  data-testid="item-image-url-input"
+                />
+                {itemForm.image_url && (
+                  <div className="mt-2 rounded-lg overflow-hidden border border-border">
+                    <img 
+                      src={itemForm.image_url} 
+                      alt="Anteprima" 
+                      className="w-full h-32 object-cover"
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  </div>
+                )}
+              </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setIsItemDialogOpen(false)} className="rounded-full">
                   Annulla
@@ -309,7 +392,7 @@ export const BoxDetail = () => {
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {box.items.map((item, index) => (
             <Card 
               key={item.id} 
@@ -317,49 +400,71 @@ export const BoxDetail = () => {
               data-testid={`item-card-${item.id}`}
             >
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{item.name}</h4>
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2 font-mono">
-                      Aggiunto: {formatDate(item.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => openEditItemDialog(item)}
-                      data-testid={`edit-item-${item.id}`}
-                    >
-                      <Edit2 size={16} />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" data-testid={`delete-item-${item.id}`}>
-                          <Trash2 size={16} className="text-destructive" />
+                <div className="flex gap-4">
+                  {item.image_url ? (
+                    <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
+                      <img 
+                        src={item.image_url} 
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '';
+                          e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                      <Image className="text-muted-foreground" size={24} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold">{item.name}</h4>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2 font-mono">
+                          {formatDate(item.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => openEditItemDialog(item)}
+                          data-testid={`edit-item-${item.id}`}
+                        >
+                          <Edit2 size={16} />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Eliminare l'oggetto?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            L'oggetto "{item.name}" verrà eliminato permanentemente.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="rounded-full bg-destructive"
-                          >
-                            Elimina
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" data-testid={`delete-item-${item.id}`}>
+                              <Trash2 size={16} className="text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminare l'oggetto?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                L'oggetto "{item.name}" verrà eliminato permanentemente.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteItem(item.id)}
+                                className="rounded-full bg-destructive"
+                              >
+                                Elimina
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

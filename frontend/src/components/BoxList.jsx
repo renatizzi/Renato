@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
 import { toast } from "sonner";
-import { Package, Plus, Trash2, Edit2, MapPin, ArrowRight } from "lucide-react";
+import { Package, Plus, Trash2, Edit2, MapPin, ArrowRight, QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,10 +16,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export const BoxList = () => {
   const [boxes, setBoxes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
+  const [selectedBoxForQR, setSelectedBoxForQR] = useState(null);
   const [editingBox, setEditingBox] = useState(null);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [filterLocation, setFilterLocation] = useState("all");
   const [formData, setFormData] = useState({ name: "", category_id: "", location: "" });
 
   useEffect(() => {
@@ -27,18 +32,39 @@ export const BoxList = () => {
 
   const fetchData = async () => {
     try {
-      const [boxesRes, categoriesRes] = await Promise.all([
+      const [boxesRes, categoriesRes, locationsRes] = await Promise.all([
         axios.get(`${API}/boxes`),
-        axios.get(`${API}/categories`)
+        axios.get(`${API}/categories`),
+        axios.get(`${API}/boxes/locations`)
       ]);
       setBoxes(boxesRes.data);
       setCategories(categoriesRes.data);
+      setLocations(locationsRes.data);
     } catch (error) {
       toast.error("Errore nel caricamento dati");
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchFilteredBoxes = async () => {
+    try {
+      const params = {};
+      if (filterCategory !== "all") params.category_id = filterCategory;
+      if (filterLocation !== "all") params.location = filterLocation;
+      
+      const response = await axios.get(`${API}/boxes`, { params });
+      setBoxes(response.data);
+    } catch (error) {
+      toast.error("Errore nel filtro");
+    }
+  };
+
+  useEffect(() => {
+    if (!loading) {
+      fetchFilteredBoxes();
+    }
+  }, [filterCategory, filterLocation]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,6 +111,11 @@ export const BoxList = () => {
     setIsDialogOpen(true);
   };
 
+  const openQRDialog = (box) => {
+    setSelectedBoxForQR(box);
+    setIsQRDialogOpen(true);
+  };
+
   const getCategoryName = (categoryId) => {
     const cat = categories.find(c => c.id === categoryId);
     return cat ? cat.name : null;
@@ -95,9 +126,31 @@ export const BoxList = () => {
     return cat ? cat.color : "#4A6741";
   };
 
-  const filteredBoxes = filterCategory === "all" 
-    ? boxes 
-    : boxes.filter(b => b.category_id === filterCategory);
+  const printQRCode = () => {
+    const printWindow = window.open('', '_blank');
+    const qrElement = document.getElementById('qr-code-print');
+    if (printWindow && qrElement) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>QR Code Scatola #${selectedBoxForQR?.box_number}</title>
+            <style>
+              body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
+              h1 { font-size: 24px; margin-bottom: 20px; }
+              .box-number { font-size: 48px; font-weight: bold; margin-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <h1>${selectedBoxForQR?.name}</h1>
+            ${qrElement.outerHTML}
+            <div class="box-number">#${selectedBoxForQR?.box_number}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
 
   if (loading) {
     return (
@@ -115,86 +168,133 @@ export const BoxList = () => {
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Scatole</h1>
           <p className="text-muted-foreground mt-1">{boxes.length} scatole nel tuo archivio</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-[180px] rounded-full" data-testid="filter-category">
-              <SelectValue placeholder="Tutte le categorie" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutte le categorie</SelectItem>
-              {categories.map(cat => (
-                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-box-btn">
-                <Plus size={18} />
-                Nuova Scatola
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>{editingBox ? "Modifica Scatola" : "Nuova Scatola"}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="es. Libri Camera"
-                    required
-                    className="mt-1"
-                    data-testid="box-name-input"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Categoria</Label>
-                  <Select 
-                    value={formData.category_id} 
-                    onValueChange={(val) => setFormData({ ...formData, category_id: val === "none" ? "" : val })}
-                  >
-                    <SelectTrigger className="mt-1" data-testid="box-category-select">
-                      <SelectValue placeholder="Seleziona categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nessuna categoria</SelectItem>
-                      {categories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="location">Posizione</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="es. Cantina, Scaffale 3"
-                    className="mt-1"
-                    data-testid="box-location-input"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full">
-                    Annulla
-                  </Button>
-                  <Button type="submit" className="rounded-full" data-testid="save-box-btn">
-                    {editingBox ? "Salva" : "Crea"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-box-btn">
+              <Plus size={18} />
+              Nuova Scatola
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingBox ? "Modifica Scatola" : "Nuova Scatola"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="es. Libri Camera"
+                  required
+                  className="mt-1"
+                  data-testid="box-name-input"
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Categoria</Label>
+                <Select 
+                  value={formData.category_id} 
+                  onValueChange={(val) => setFormData({ ...formData, category_id: val === "none" ? "" : val })}
+                >
+                  <SelectTrigger className="mt-1" data-testid="box-category-select">
+                    <SelectValue placeholder="Seleziona categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nessuna categoria</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="location">Posizione</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="es. Cantina, Scaffale 3"
+                  className="mt-1"
+                  data-testid="box-location-input"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full">
+                  Annulla
+                </Button>
+                <Button type="submit" className="rounded-full" data-testid="save-box-btn">
+                  {editingBox ? "Salva" : "Crea"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
+      {/* Filters */}
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <Label className="text-xs text-muted-foreground mb-1 block">Categoria</Label>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger data-testid="filter-category">
+                  <SelectValue placeholder="Tutte le categorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le categorie</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs text-muted-foreground mb-1 block">Posizione</Label>
+              <Select value={filterLocation} onValueChange={setFilterLocation}>
+                <SelectTrigger data-testid="filter-location">
+                  <SelectValue placeholder="Tutte le posizioni" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le posizioni</SelectItem>
+                  {locations.map(loc => (
+                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* QR Code Dialog */}
+      <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
+        <DialogContent className="sm:max-w-sm text-center">
+          <DialogHeader>
+            <DialogTitle>QR Code Scatola #{selectedBoxForQR?.box_number}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="p-4 bg-white rounded-2xl">
+              <QRCodeSVG
+                id="qr-code-print"
+                value={`Scatola #${selectedBoxForQR?.box_number}`}
+                size={200}
+                level="H"
+              />
+            </div>
+            <p className="text-3xl font-mono font-bold">#{selectedBoxForQR?.box_number}</p>
+            <p className="text-muted-foreground">{selectedBoxForQR?.name}</p>
+            <Button onClick={printQRCode} className="rounded-full w-full">
+              Stampa QR Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Box Grid */}
-      {filteredBoxes.length === 0 ? (
+      {boxes.length === 0 ? (
         <div className="empty-state py-16">
           <Package className="text-muted-foreground/50 mb-4" size={64} />
           <h3 className="text-xl font-semibold mb-2">Nessuna scatola</h3>
@@ -206,7 +306,7 @@ export const BoxList = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBoxes.map((box, index) => (
+          {boxes.map((box, index) => (
             <Card 
               key={box.id} 
               className={`card-hover border-border/50 bg-card/50 backdrop-blur-sm group stagger-${(index % 5) + 1} opacity-0 animate-slide-in-up`}
@@ -218,6 +318,14 @@ export const BoxList = () => {
                     <span className="font-mono font-bold text-primary text-lg">#{box.box_number}</span>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openQRDialog(box)}
+                      data-testid={`qr-box-${box.box_number}`}
+                    >
+                      <QrCode size={16} />
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
