@@ -44,13 +44,20 @@ App per gestire un archivio di oggetti personali con numerazione univoca scatole
 - Selezione parziale per export
 - Design responsive mobile/desktop
 
+## What's Implemented (21 Gen 2025) - Update
+- **Password di accesso**: Password singola per proteggere l'app (archivio2025)
+- **URL Immagini**: Campo per aggiungere URL immagine agli oggetti con anteprima
+- **Filtro per posizione**: Dropdown per filtrare scatole per posizione
+- **QR Code**: Generazione QR code con numero scatola per identificazione rapida
+- Logout funzionalità
+- Immagini visibili nei risultati di ricerca
+
 ## Backlog / Next Features (P0-P2)
 ### P1
-- Foto/immagini per oggetti
-- Filtro scatole per posizione
 - Ordinamento risultati ricerca
+- Upload file immagini (storage server)
 
 ### P2
 - Backup/restore database
-- QR code per scatole
 - Dark mode
+- Condivisione archivio con altri utenti
