@@ -183,6 +183,77 @@ class ArchiveAPITester:
         success, _ = self.run_test("Search Items", "GET", "search", 200, params={"q": "test"})
         return success
 
+    def test_auth_functionality(self):
+        """Test authentication functionality"""
+        print("\n🔐 Testing Authentication...")
+        
+        # Test correct password
+        auth_data = {"password": "archivio2025"}
+        success, response = self.run_test("Login with correct password", "POST", "auth/verify", 200, auth_data)
+        if not success:
+            return False
+        
+        # Test wrong password
+        wrong_auth_data = {"password": "wrongpassword"}
+        success, _ = self.run_test("Login with wrong password", "POST", "auth/verify", 401, wrong_auth_data)
+        if success:  # We expect this to fail (401), so success means the test passed
+            self.tests_passed += 1
+            print("✅ Passed - Wrong password correctly rejected")
+        else:
+            print("❌ Failed - Wrong password should return 401")
+            return False
+        
+        return True
+
+    def test_location_filter(self):
+        """Test location filtering functionality"""
+        print("\n📍 Testing Location Filter...")
+        
+        # Test get locations endpoint
+        success, response = self.run_test("Get Locations", "GET", "boxes/locations", 200)
+        if not success:
+            return False
+        
+        # Test filtering boxes by location if we have boxes with locations
+        if self.created_items['boxes']:
+            success, _ = self.run_test("Filter boxes by location", "GET", "boxes", 200, params={"location": "Test"})
+            if not success:
+                return False
+        
+        return True
+
+    def test_image_url_functionality(self):
+        """Test image URL functionality in items"""
+        print("\n🖼️ Testing Image URL in Items...")
+        
+        if not self.created_items['boxes']:
+            print("❌ No boxes available for image URL testing")
+            return False
+        
+        box_id = self.created_items['boxes'][0]
+        
+        # Add item with image URL
+        item_data = {
+            "name": f"Test Item with Image {datetime.now().strftime('%H%M%S')}",
+            "description": "Test item with image",
+            "image_url": "https://example.com/test-image.jpg"
+        }
+        success, response = self.run_test("Add Item with Image URL", "POST", f"boxes/{box_id}/items", 200, item_data)
+        if not success:
+            return False
+        
+        # Verify image_url is in response
+        items = response.get('items', [])
+        if items:
+            last_item = items[-1]
+            if last_item.get('image_url') == item_data['image_url']:
+                print("✅ Image URL correctly stored and returned")
+            else:
+                print("❌ Image URL not properly stored")
+                return False
+        
+        return True
+
     def test_export_functionality(self):
         """Test export functionality"""
         print("\n📄 Testing Export Operations...")
