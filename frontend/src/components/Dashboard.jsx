@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
-import { Package, Folders, Archive, Plus, ArrowRight } from "lucide-react";
+import { Package, Folders, Archive, Plus, ArrowRight, Search, QrCode, Printer, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -54,6 +54,39 @@ export const Dashboard = () => {
     },
   ];
 
+  const features = [
+    {
+      icon: Package,
+      title: "Gestione Scatole",
+      description: "Crea e organizza scatole con numerazione automatica, categorie e posizioni."
+    },
+    {
+      icon: Search,
+      title: "Ricerca Avanzata",
+      description: "Trova i tuoi oggetti con ricerca testuale o vocale in italiano."
+    },
+    {
+      icon: QrCode,
+      title: "QR Code",
+      description: "Genera e stampa QR code per identificare rapidamente le scatole."
+    },
+    {
+      icon: Printer,
+      title: "Stampa & Export",
+      description: "Stampa liste o esporta l'archivio in CSV. Backup e ripristino JSON."
+    },
+    {
+      icon: Folders,
+      title: "Categorie Colorate",
+      description: "Organizza le scatole in categorie con colori personalizzati."
+    },
+    {
+      icon: Settings,
+      title: "Impostazioni",
+      description: "Gestisci password, backup e ripristino dell'archivio."
+    }
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -100,6 +133,33 @@ export const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Features Overview */}
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">Funzionalità Principali</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((feature, index) => (
+              <div 
+                key={feature.title}
+                className={`p-4 rounded-xl bg-secondary/50 stagger-${(index % 5) + 1} opacity-0 animate-slide-in-up`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <feature.icon className="text-primary" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Boxes */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">

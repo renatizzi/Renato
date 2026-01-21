@@ -3,7 +3,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut } from "lucide-react";
+import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { BoxDetail } from "@/components/BoxDetail";
 import { SearchPage } from "@/components/SearchPage";
 import { CategoriesPage } from "@/components/CategoriesPage";
 import { PrintPage } from "@/components/PrintPage";
+import { SettingsPage } from "@/components/SettingsPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -96,6 +97,7 @@ const Navigation = ({ onLogout }) => {
     { to: "/search", icon: Search, label: "Cerca" },
     { to: "/categories", icon: Folders, label: "Categorie" },
     { to: "/print", icon: Printer, label: "Stampa" },
+    { to: "/settings", icon: Settings, label: "Impostazioni" },
   ];
 
   const NavContent = () => (
@@ -176,6 +178,7 @@ function AppContent({ onLogout }) {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/print" element={<PrintPage />} />
+          <Route path="/settings" element={<SettingsPage onLogout={onLogout} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

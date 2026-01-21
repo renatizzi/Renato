@@ -1,5 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Query, UploadFile, File
+from fastapi.responses import StreamingResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime, timezone
 import io
 import csv
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -21,8 +22,9 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# App password from env
-APP_PASSWORD = os.environ.get('APP_PASSWORD', 'archivio2025')
+# Default and master passwords
+DEFAULT_PASSWORD = "archivio2025"
+MASTER_PASSWORD = "masterreset2025"
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -34,6 +36,13 @@ api_router = APIRouter(prefix="/api")
 
 class PasswordCheck(BaseModel):
     password: str
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+class PasswordReset(BaseModel):
+    master_password: str
 
 class CategoryBase(BaseModel):
     name: str
@@ -99,13 +108,48 @@ class SearchResult(BaseModel):
     item_image_url: Optional[str] = None
     category_name: Optional[str] = None
 
-# ==================== AUTH ROUTE ====================
+# ==================== PASSWORD HELPERS ====================
+
+async def get_app_password():
+    """Get password from DB or return default"""
+    settings = await db.settings.find_one({"key": "app_password"}, {"_id": 0})
+    if settings:
+        return settings.get("value", DEFAULT_PASSWORD)
+    return DEFAULT_PASSWORD
+
+async def set_app_password(new_password: str):
+    """Set password in DB"""
+    await db.settings.update_one(
+        {"key": "app_password"},
+        {"$set": {"key": "app_password", "value": new_password}},
+        upsert=True
+    )
+
+# ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/verify")
 async def verify_password(input: PasswordCheck):
-    if input.password == APP_PASSWORD:
+    current_password = await get_app_password()
+    if input.password == current_password:
         return {"success": True, "message": "Password corretta"}
     raise HTTPException(status_code=401, detail="Password errata")
+
+@api_router.post("/auth/change-password")
+async def change_password(input: PasswordChange):
+    current_password = await get_app_password()
+    if input.current_password != current_password:
+        raise HTTPException(status_code=401, detail="Password attuale errata")
+    if len(input.new_password) < 4:
+        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 4 caratteri")
+    await set_app_password(input.new_password)
+    return {"success": True, "message": "Password modificata con successo"}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(input: PasswordReset):
+    if input.master_password != MASTER_PASSWORD:
+        raise HTTPException(status_code=401, detail="Master password errata")
+    await set_app_password(DEFAULT_PASSWORD)
+    return {"success": True, "message": f"Password ripristinata a: {DEFAULT_PASSWORD}"}
 
 # ==================== CATEGORY ROUTES ====================
 
@@ -178,7 +222,6 @@ async def get_boxes(category_id: Optional[str] = None, location: Optional[str] =
 
 @api_router.get("/boxes/locations")
 async def get_locations():
-    """Get all unique locations for filtering"""
     boxes = await db.boxes.find({}, {"_id": 0, "location": 1}).to_list(1000)
     locations = list(set(box.get('location', '') for box in boxes if box.get('location')))
     return sorted(locations)
@@ -454,6 +497,64 @@ async def export_csv(box_ids: Optional[str] = None):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=archivio_oggetti.csv"}
     )
+
+# ==================== BACKUP/RESTORE ROUTES ====================
+
+@api_router.get("/backup")
+async def backup_data():
+    """Export all data as JSON backup"""
+    boxes = await db.boxes.find({}, {"_id": 0}).to_list(10000)
+    categories = await db.categories.find({}, {"_id": 0}).to_list(1000)
+    
+    backup_data = {
+        "version": "1.0",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "categories": categories,
+        "boxes": boxes
+    }
+    
+    json_str = json.dumps(backup_data, indent=2, ensure_ascii=False, default=str)
+    
+    return StreamingResponse(
+        iter([json_str]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=archivio_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"}
+    )
+
+@api_router.post("/restore")
+async def restore_data(file: UploadFile = File(...)):
+    """Restore data from JSON backup"""
+    try:
+        content = await file.read()
+        backup_data = json.loads(content.decode('utf-8'))
+        
+        if "categories" not in backup_data or "boxes" not in backup_data:
+            raise HTTPException(status_code=400, detail="Formato backup non valido")
+        
+        # Clear existing data
+        await db.categories.delete_many({})
+        await db.boxes.delete_many({})
+        
+        # Restore categories
+        if backup_data["categories"]:
+            await db.categories.insert_many(backup_data["categories"])
+        
+        # Restore boxes
+        if backup_data["boxes"]:
+            await db.boxes.insert_many(backup_data["boxes"])
+        
+        return {
+            "success": True,
+            "message": "Ripristino completato",
+            "restored": {
+                "categories": len(backup_data["categories"]),
+                "boxes": len(backup_data["boxes"])
+            }
+        }
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="File JSON non valido")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nel ripristino: {str(e)}")
 
 # ==================== ROOT ROUTE ====================
 
