@@ -8,6 +8,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
+// Image component with error handling
+const ItemImage = ({ url, name }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !url) {
+    return (
+      <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+        <Image className="text-muted-foreground" size={20} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
+      <img 
+        src={url} 
+        alt={name}
+        className="w-full h-full object-cover"
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+};
+
 export const SearchPage = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -202,23 +226,7 @@ export const SearchPage = () => {
                 >
                   <CardContent className="p-4">
                     <div className="flex gap-4">
-                      {result.item_image_url ? (
-                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
-                          <img 
-                            src={result.item_image_url} 
-                            alt={result.item_name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>';
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                          <Image className="text-muted-foreground" size={20} />
-                        </div>
-                      )}
+                      <ItemImage url={result.item_image_url} name={result.item_name} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">

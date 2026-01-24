@@ -16,6 +16,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Image component with error handling
+const ItemImage = ({ url, name, size = "md" }) => {
+  const [hasError, setHasError] = useState(false);
+  const sizeClasses = size === "lg" ? "w-20 h-20" : "w-16 h-16";
+  const iconSize = size === "lg" ? 24 : 20;
+
+  if (hasError || !url) {
+    return (
+      <div className={`${sizeClasses} rounded-xl bg-muted flex items-center justify-center flex-shrink-0`}>
+        <Image className="text-muted-foreground" size={iconSize} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses} rounded-xl overflow-hidden flex-shrink-0 bg-muted`}>
+      <img 
+        src={url} 
+        alt={name}
+        className="w-full h-full object-cover"
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+};
+
 export const BoxDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -401,13 +427,7 @@ export const BoxDetail = () => {
             >
               <CardContent className="p-4">
                 <div className="flex gap-4">
-                  {item.image_url ? (
-                    <ItemImage url={item.image_url} name={item.name} size="lg" />
-                  ) : (
-                    <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                      <Image className="text-muted-foreground" size={24} />
-                    </div>
-                  )}
+                  <ItemImage url={item.image_url} name={item.name} size="lg" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div>
