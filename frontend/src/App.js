@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut, Settings, MoreHorizontal } from "lucide-react";
+import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,8 @@ import { BoxDetail } from "@/components/BoxDetail";
 import { SearchPage } from "@/components/SearchPage";
 import { CategoriesPage } from "@/components/CategoriesPage";
 import { PrintPage } from "@/components/PrintPage";
-import { SettingsPage } from "@/components/SettingsPage";
+import { PasswordPage } from "@/components/PasswordPage";
+import { BackupPage } from "@/components/BackupPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -87,38 +88,87 @@ const LoginPage = ({ onLogin }) => {
   );
 };
 
-// Navigation Component
+// Navigation Component - Menu uguale alla homepage
 const Navigation = ({ onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navItems = [
-    { to: "/", icon: Home, label: "Riepilogo" },
-    { to: "/boxes", icon: Package, label: "Contenitori" },
-    { to: "/search", icon: Search, label: "Cerca" },
-    { to: "/categories", icon: Folders, label: "Categorie" },
-    { to: "/print", icon: Printer, label: "Stampa" },
-    { to: "/settings", icon: Settings, label: "Impostazioni" },
+    { to: "/categories", icon: Folders, label: "Gestione Categorie" },
+    { to: "/boxes", icon: Package, label: "Gestione Contenitori" },
+    { to: "/search", icon: Search, label: "Ricerca Avanzata" },
+    { to: "/other", icon: MoreHorizontal, label: "Altre Funzioni", isSubmenu: true },
   ];
+
+  const otherFunctionsItems = [
+    { to: "/print", label: "Esporta & Stampa" },
+    { to: "/backup", label: "Backup & Ripristino" },
+    { to: "/password", label: "Password" },
+  ];
+
+  const [showOtherMenu, setShowOtherMenu] = useState(false);
+
+  const handleNavClick = (item) => {
+    if (item.isSubmenu) {
+      setShowOtherMenu(!showOtherMenu);
+    } else {
+      navigate(item.to);
+      setIsOpen(false);
+      setShowOtherMenu(false);
+    }
+  };
 
   const NavContent = () => (
     <nav className="flex flex-col gap-2">
       {navItems.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          onClick={() => setIsOpen(false)}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200 ${
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-secondary text-foreground"
-            }`
-          }
-          data-testid={`nav-${item.label.toLowerCase()}`}
-        >
-          <item.icon size={20} />
-          <span className="font-medium">{item.label}</span>
-        </NavLink>
+        <div key={item.to || item.label}>
+          {item.isSubmenu ? (
+            <>
+              <button
+                onClick={() => handleNavClick(item)}
+                className="flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200 hover:bg-secondary text-foreground w-full text-left"
+              >
+                <item.icon size={20} />
+                <span className="font-medium">{item.label}</span>
+              </button>
+              {showOtherMenu && (
+                <div className="ml-8 mt-1 space-y-1">
+                  {otherFunctionsItems.map((subItem) => (
+                    <NavLink
+                      key={subItem.to}
+                      to={subItem.to}
+                      onClick={() => { setIsOpen(false); setShowOtherMenu(false); }}
+                      className={({ isActive }) =>
+                        `block px-4 py-2 rounded-full text-sm transition-all duration-200 ${
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-secondary text-foreground"
+                        }`
+                      }
+                    >
+                      {subItem.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <NavLink
+              to={item.to}
+              onClick={() => { setIsOpen(false); setShowOtherMenu(false); }}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200 ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-secondary text-foreground"
+                }`
+              }
+            >
+              <item.icon size={20} />
+              <span className="font-medium">{item.label}</span>
+            </NavLink>
+          )}
+        </div>
       ))}
       <button
         onClick={onLogout}
@@ -135,17 +185,17 @@ const Navigation = ({ onLogout }) => {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-card/50 backdrop-blur-sm border-r border-border p-6 no-print">
-        <div className="mb-8">
-          <h1 className="text-xl font-extrabold text-primary tracking-tight">Archivio</h1>
+        <NavLink to="/" className="mb-8 block">
+          <h1 className="text-xl font-extrabold text-primary tracking-tight hover:underline">Riepilogo</h1>
           <p className="text-sm text-muted-foreground">Oggetti Personali</p>
-        </div>
+        </NavLink>
         <NavContent />
       </aside>
 
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border no-print">
         <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-lg font-extrabold text-primary">Archivio</h1>
+          <NavLink to="/" className="text-lg font-extrabold text-primary hover:underline">Riepilogo</NavLink>
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" data-testid="mobile-menu-btn">
@@ -153,10 +203,10 @@ const Navigation = ({ onLogout }) => {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-6">
-              <div className="mb-8">
-                <h1 className="text-xl font-extrabold text-primary tracking-tight">Archivio</h1>
+              <NavLink to="/" onClick={() => setIsOpen(false)} className="mb-8 block">
+                <h1 className="text-xl font-extrabold text-primary tracking-tight hover:underline">Riepilogo</h1>
                 <p className="text-sm text-muted-foreground">Oggetti Personali</p>
-              </div>
+              </NavLink>
               <NavContent />
             </SheetContent>
           </Sheet>
@@ -178,7 +228,8 @@ function AppContent({ onLogout }) {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/print" element={<PrintPage />} />
-          <Route path="/settings" element={<SettingsPage onLogout={onLogout} />} />
+          <Route path="/password" element={<PasswordPage onLogout={onLogout} />} />
+          <Route path="/backup" element={<BackupPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
