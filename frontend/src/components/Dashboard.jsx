@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
-import { Package, Folders, Archive, Plus, ArrowRight, Search, QrCode, Printer, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Folders, Package, Archive, Search, MoreHorizontal, QrCode, Printer, FileSpreadsheet, Download, Upload, Key, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ total_boxes: 0, total_items: 0, total_categories: 0 });
-  const [recentBoxes, setRecentBoxes] = useState([]);
+  const [boxes, setBoxes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showOtherFunctions, setShowOtherFunctions] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -22,7 +26,7 @@ export const Dashboard = () => {
         axios.get(`${API}/boxes`)
       ]);
       setStats(statsRes.data);
-      setRecentBoxes(boxesRes.data.slice(-5).reverse());
+      setBoxes(boxesRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -30,62 +34,126 @@ export const Dashboard = () => {
     }
   };
 
-  const statCards = [
+  const menuItems = [
     { 
-      title: "Scatole", 
-      value: stats.total_boxes, 
-      icon: Package, 
-      color: "text-primary",
-      bgColor: "bg-primary/10"
+      icon: Folders,
+      label: "Gestione Categorie",
+      description: "Crea e organizza la categoria colorata del singolo contenitore (tipologia degli oggetti contenuti, descrizione, caratteristica, ecc.)",
+      count: stats.total_categories,
+      link: "/categories"
     },
     { 
-      title: "Oggetti", 
-      value: stats.total_items, 
-      icon: Archive, 
-      color: "text-accent",
-      bgColor: "bg-accent/10"
+      icon: Package,
+      label: "Gestione Contenitori",
+      description: "Crea e organizza i contenitori (numerazione, categoria e posizione / luogo di custodia)",
+      count: stats.total_boxes,
+      link: "/boxes"
     },
     { 
-      title: "Categorie", 
-      value: stats.total_categories, 
-      icon: Folders, 
-      color: "text-chart-3",
-      bgColor: "bg-chart-3/10"
+      icon: Archive,
+      label: "Gestione Oggetti",
+      description: "Crea e organizza gli oggetti dei singoli contenitori (nome oggetto, descrizione, eventuale foto)",
+      count: stats.total_items,
+      link: "/boxes",
+      isObjectsLink: true
+    },
+    { 
+      icon: Search,
+      label: "Ricerca Avanzata",
+      description: "Trova gli oggetti custoditi nei contenitori mediante ricerca testuale o vocale",
+      count: null,
+      link: "/search"
+    },
+    { 
+      icon: MoreHorizontal,
+      label: "Altre Funzioni",
+      description: "Gestione QR Code, stampa, export, backup, ripristino archivio, password",
+      count: null,
+      link: null,
+      isOtherFunctions: true
     },
   ];
 
-  const features = [
-    {
-      icon: Package,
-      title: "Gestione Scatole",
-      description: "Crea e organizza scatole con numerazione automatica, categorie e posizioni."
-    },
-    {
-      icon: Search,
-      title: "Ricerca Avanzata",
-      description: "Trova i tuoi oggetti con ricerca testuale o vocale in italiano."
-    },
+  const otherFunctionsMenu = [
     {
       icon: QrCode,
-      title: "QR Code",
-      description: "Genera e stampa QR code per identificare rapidamente le scatole."
+      label: "QR Code",
+      description: "Genera e stampa QR code per identificare rapidamente i singoli contenitori",
+      action: () => { navigate("/boxes"); setShowOtherFunctions(false); }
     },
     {
       icon: Printer,
-      title: "Stampa & Export",
-      description: "Stampa liste o esporta l'archivio in CSV. Backup e ripristino JSON."
+      label: "Stampa",
+      description: "Stampa liste complete o parziali dell'archivio",
+      action: () => { navigate("/print"); setShowOtherFunctions(false); }
     },
     {
-      icon: Folders,
-      title: "Categorie Colorate",
-      description: "Organizza le scatole in categorie con colori personalizzati."
+      icon: FileSpreadsheet,
+      label: "Export",
+      description: "Esporta l'archivio in un file CSV per l'elaborazione immediata con altre applicazioni",
+      action: async () => {
+        try {
+          const response = await axios.get(`${API}/export/csv`, { responseType: 'blob' });
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', 'archivio_oggetti.csv');
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        } catch (error) {
+          console.error("Export error:", error);
+        }
+        setShowOtherFunctions(false);
+      }
     },
     {
-      icon: Settings,
-      title: "Impostazioni",
-      description: "Gestisci password, backup e ripristino dell'archivio."
-    }
+      icon: Download,
+      label: "Backup",
+      description: "Effettua il backup dell'archivio in formato JSON",
+      action: async () => {
+        try {
+          const response = await axios.get(`${API}/backup`, { responseType: 'blob' });
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `archivio_backup_${new Date().toISOString().slice(0,10)}.json`);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        } catch (error) {
+          console.error("Backup error:", error);
+        }
+        setShowOtherFunctions(false);
+      }
+    },
+    {
+      icon: Upload,
+      label: "Ripristino",
+      description: "Effettua il ripristino dell'archivio in formato JSON",
+      action: () => { navigate("/settings"); setShowOtherFunctions(false); }
+    },
+    {
+      icon: Key,
+      label: "Password",
+      description: "Gestisce la password di accesso con possibilità di ripristino di quella originale",
+      action: () => { navigate("/settings"); setShowOtherFunctions(false); }
+    },
   ];
+
+  const handleMenuClick = (item) => {
+    if (item.isOtherFunctions) {
+      setShowOtherFunctions(true);
+    } else if (item.isObjectsLink) {
+      if (boxes.length === 0) {
+        alert("Nessun contenitore in archivio");
+      } else {
+        navigate("/boxes");
+      }
+    } else if (item.link) {
+      navigate(item.link);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,118 +166,82 @@ export const Dashboard = () => {
   return (
     <div className="space-y-8 animate-slide-in-up" data-testid="dashboard">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Gestisci il tuo archivio personale</p>
-        </div>
-        <Link to="/boxes">
-          <Button className="rounded-full btn-bounce gap-2" data-testid="add-box-btn">
-            <Plus size={18} />
-            Nuova Scatola
-          </Button>
-        </Link>
+      <div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Riepilogo contenitori</h1>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => (
-          <Card 
-            key={stat.title} 
-            className={`card-hover border-border/50 bg-card/50 backdrop-blur-sm stagger-${index + 1} opacity-0 animate-slide-in-up`}
-            data-testid={`stat-${stat.title.toLowerCase()}`}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <p className="text-4xl font-extrabold mt-1">{stat.value}</p>
-                </div>
-                <div className={`p-4 rounded-2xl ${stat.bgColor}`}>
-                  <stat.icon className={stat.color} size={28} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Features Overview */}
+      {/* Main Menu Table */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Funzionalità Principali</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((feature, index) => (
-              <div 
-                key={feature.title}
-                className={`p-4 rounded-xl bg-secondary/50 stagger-${(index % 5) + 1} opacity-0 animate-slide-in-up`}
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12"></TableHead>
+                <TableHead>Funzionalità</TableHead>
+                <TableHead className="text-right w-24">Totale</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {menuItems.map((item) => (
+                <TableRow 
+                  key={item.label}
+                  className="cursor-pointer hover:bg-secondary/50 transition-colors"
+                  onClick={() => handleMenuClick(item)}
+                  data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <TableCell className="py-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <item.icon className="text-primary" size={20} />
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">{item.label}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                      </div>
+                      <ChevronRight className="text-muted-foreground ml-2" size={20} />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    {item.count !== null && (
+                      <span className="text-2xl font-bold">{item.count}</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Other Functions Dialog */}
+      <Dialog open={showOtherFunctions} onOpenChange={setShowOtherFunctions}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Altre Funzioni</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-4">
+            {otherFunctionsMenu.map((item) => (
+              <button
+                key={item.label}
+                onClick={item.action}
+                className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-secondary/50 transition-colors text-left"
+                data-testid={`other-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <feature.icon className="text-primary" size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="text-primary" size={20} />
                 </div>
-              </div>
+                <div className="flex-1">
+                  <p className="font-semibold">{item.label}</p>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                </div>
+                <ChevronRight className="text-muted-foreground" size={20} />
+              </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Boxes */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl">Ultime Scatole</CardTitle>
-          <Link to="/boxes">
-            <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
-              Vedi tutte
-              <ArrowRight size={16} />
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {recentBoxes.length === 0 ? (
-            <div className="empty-state py-12">
-              <Package className="text-muted-foreground/50 mb-4" size={48} />
-              <p className="text-muted-foreground">Nessuna scatola ancora</p>
-              <Link to="/boxes" className="mt-4">
-                <Button variant="outline" className="rounded-full">
-                  Crea la prima scatola
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recentBoxes.map((box) => (
-                <Link 
-                  key={box.id} 
-                  to={`/boxes/${box.id}`}
-                  className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
-                  data-testid={`recent-box-${box.box_number}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <span className="font-mono font-bold text-primary">#{box.box_number}</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold">{box.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {box.items?.length || 0} oggetti
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRight className="text-muted-foreground" size={20} />
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut, Settings } from "lucide-react";
+import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut, Settings, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,8 +92,8 @@ const Navigation = ({ onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
-    { to: "/", icon: Home, label: "Dashboard" },
-    { to: "/boxes", icon: Package, label: "Scatole" },
+    { to: "/", icon: Home, label: "Riepilogo" },
+    { to: "/boxes", icon: Package, label: "Contenitori" },
     { to: "/search", icon: Search, label: "Cerca" },
     { to: "/categories", icon: Folders, label: "Categorie" },
     { to: "/print", icon: Printer, label: "Stampa" },

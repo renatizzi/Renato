@@ -71,10 +71,10 @@ export const BoxList = () => {
     try {
       if (editingBox) {
         await axios.put(`${API}/boxes/${editingBox.id}`, formData);
-        toast.success("Scatola modificata");
+        toast.success("Contenitore modificato");
       } else {
         await axios.post(`${API}/boxes`, formData);
-        toast.success("Scatola creata");
+        toast.success("Contenitore creato");
       }
       setIsDialogOpen(false);
       setEditingBox(null);
@@ -88,7 +88,7 @@ export const BoxList = () => {
   const handleDelete = async (boxId) => {
     try {
       await axios.delete(`${API}/boxes/${boxId}`);
-      toast.success("Scatola eliminata");
+      toast.success("Contenitore eliminato");
       fetchData();
     } catch (error) {
       toast.error("Errore nell'eliminazione");
@@ -133,7 +133,7 @@ export const BoxList = () => {
       printWindow.document.write(`
         <html>
           <head>
-            <title>QR Code Scatola #${selectedBoxForQR?.box_number}</title>
+            <title>QR Code Contenitore #${selectedBoxForQR?.box_number}</title>
             <style>
               body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
               h1 { font-size: 24px; margin-bottom: 20px; }
@@ -165,19 +165,19 @@ export const BoxList = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Scatole</h1>
-          <p className="text-muted-foreground mt-1">{boxes.length} scatole nel tuo archivio</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Contenitori</h1>
+          <p className="text-muted-foreground mt-1">{boxes.length} contenitori nel tuo archivio</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-box-btn">
               <Plus size={18} />
-              Nuova Scatola
+              Nuovo Contenitore
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingBox ? "Modifica Scatola" : "Nuova Scatola"}</DialogTitle>
+              <DialogTitle>{editingBox ? "Modifica Contenitore" : "Nuovo Contenitore"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -273,13 +273,13 @@ export const BoxList = () => {
       <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
         <DialogContent className="sm:max-w-sm text-center">
           <DialogHeader>
-            <DialogTitle>QR Code Scatola #{selectedBoxForQR?.box_number}</DialogTitle>
+            <DialogTitle>QR Code Contenitore #{selectedBoxForQR?.box_number}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="p-4 bg-white rounded-2xl">
               <QRCodeSVG
                 id="qr-code-print"
-                value={`Scatola #${selectedBoxForQR?.box_number}`}
+                value={`Contenitore #${selectedBoxForQR?.box_number}`}
                 size={200}
                 level="H"
               />
@@ -297,11 +297,11 @@ export const BoxList = () => {
       {boxes.length === 0 ? (
         <div className="empty-state py-16">
           <Package className="text-muted-foreground/50 mb-4" size={64} />
-          <h3 className="text-xl font-semibold mb-2">Nessuna scatola</h3>
-          <p className="text-muted-foreground mb-4">Crea la tua prima scatola per iniziare</p>
+          <h3 className="text-xl font-semibold mb-2">Nessun contenitore</h3>
+          <p className="text-muted-foreground mb-4">Crea il tuo primo contenitore per iniziare</p>
           <Button className="rounded-full" onClick={openNewDialog}>
             <Plus size={18} className="mr-2" />
-            Nuova Scatola
+            Nuovo Contenitore
           </Button>
         </div>
       ) : (
@@ -342,9 +342,9 @@ export const BoxList = () => {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Eliminare la scatola?</AlertDialogTitle>
+                          <AlertDialogTitle>Eliminare il contenitore?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Questa azione è irreversibile. Tutti gli oggetti nella scatola verranno eliminati.
+                            Questa azione è irreversibile. Tutti gli oggetti nel contenitore verranno eliminati.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
