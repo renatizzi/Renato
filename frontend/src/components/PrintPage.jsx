@@ -110,7 +110,7 @@ export const PrintPage = () => {
       <div className="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Stampa & Esporta</h1>
-          <p className="text-muted-foreground mt-1">Seleziona le scatole da stampare o esportare</p>
+          <p className="text-muted-foreground mt-1">Seleziona i contenitori da stampare o esportare</p>
         </div>
         <div className="flex gap-3">
           <Button 
@@ -146,7 +146,7 @@ export const PrintPage = () => {
                 data-testid="select-all-btn"
               >
                 <CheckSquare size={16} />
-                Seleziona Tutte
+                Seleziona Tutti
               </Button>
               <Button 
                 variant="outline" 
@@ -161,8 +161,8 @@ export const PrintPage = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               {selectedBoxes.length === 0 
-                ? `Stamperai tutte le ${boxes.length} scatole`
-                : `${selectedBoxes.length} scatole selezionate`
+                ? `Stamperai tutti i ${boxes.length} contenitori`
+                : `${selectedBoxes.length} contenitori selezionati`
               }
             </p>
           </div>
@@ -213,12 +213,12 @@ export const PrintPage = () => {
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span>Categoria: {getCategoryName(box.category_id)}</span>
                 {box.location && <span>Posizione: {box.location}</span>}
-                <span>Creata: {formatDate(box.created_at)}</span>
+                <span>Creato: {formatDate(box.created_at)}</span>
               </div>
             </CardHeader>
             <CardContent>
               {box.items?.length === 0 ? (
-                <p className="text-muted-foreground italic">Scatola vuota</p>
+                <p className="text-muted-foreground italic">Contenitore vuoto</p>
               ) : (
                 <table className="w-full print-table">
                   <thead>

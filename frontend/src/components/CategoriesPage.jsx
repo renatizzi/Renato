@@ -92,7 +92,7 @@ export const CategoriesPage = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Categorie</h1>
-          <p className="text-muted-foreground mt-1">Organizza le tue scatole in categorie</p>
+          <p className="text-muted-foreground mt-1">Organizza i tuoi contenitori in categorie</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -160,7 +160,7 @@ export const CategoriesPage = () => {
         <div className="empty-state py-16">
           <Folders className="text-muted-foreground/50 mb-4" size={64} />
           <h3 className="text-xl font-semibold mb-2">Nessuna categoria</h3>
-          <p className="text-muted-foreground mb-4">Crea categorie per organizzare le tue scatole</p>
+          <p className="text-muted-foreground mb-4">Crea categorie per organizzare i tuoi contenitori</p>
           <Button className="rounded-full" onClick={openNewDialog}>
             <Plus size={18} className="mr-2" />
             Nuova Categoria
@@ -210,7 +210,7 @@ export const CategoriesPage = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Eliminare la categoria?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            La categoria verrà rimossa. Le scatole associate rimarranno senza categoria.
+                            La categoria verrà rimossa. I contenitori associati rimarranno senza categoria.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

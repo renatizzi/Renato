@@ -226,7 +226,7 @@ export const SearchPage = () => {
                 >
                   <CardContent className="p-4">
                     <div className="flex gap-4">
-                      <ItemImage url={result.item_image_url} name={result.item_name} />
+                      <ItemImage url={result.item_image_data} name={result.item_name} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
