@@ -222,34 +222,37 @@ class ArchiveAPITester:
         
         return True
 
-    def test_image_url_functionality(self):
-        """Test image URL functionality in items"""
-        print("\n🖼️ Testing Image URL in Items...")
+    def test_image_data_functionality(self):
+        """Test image_data functionality in items (base64 images)"""
+        print("\n🖼️ Testing Image Data in Items...")
         
         if not self.created_items['boxes']:
-            print("❌ No boxes available for image URL testing")
+            print("❌ No boxes available for image data testing")
             return False
         
         box_id = self.created_items['boxes'][0]
         
-        # Add item with image URL
+        # Sample base64 image data (1x1 pixel JPEG)
+        sample_base64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+        
+        # Add item with image data
         item_data = {
             "name": f"Test Item with Image {datetime.now().strftime('%H%M%S')}",
-            "description": "Test item with image",
-            "image_url": "https://example.com/test-image.jpg"
+            "description": "Test item with base64 image",
+            "image_data": sample_base64
         }
-        success, response = self.run_test("Add Item with Image URL", "POST", f"boxes/{box_id}/items", 200, item_data)
+        success, response = self.run_test("Add Item with Image Data", "POST", f"boxes/{box_id}/items", 200, item_data)
         if not success:
             return False
         
-        # Verify image_url is in response
+        # Verify image_data is in response
         items = response.get('items', [])
         if items:
             last_item = items[-1]
-            if last_item.get('image_url') == item_data['image_url']:
-                print("✅ Image URL correctly stored and returned")
+            if last_item.get('image_data') == item_data['image_data']:
+                print("✅ Image data correctly stored and returned")
             else:
-                print("❌ Image URL not properly stored")
+                print("❌ Image data not properly stored")
                 return False
         
         return True
