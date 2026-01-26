@@ -397,9 +397,9 @@ class ArchiveAPITester:
                 print("❌ Item operations failed")
                 return False
             
-            # Image URL functionality (new feature)
-            if not self.test_image_url_functionality():
-                print("❌ Image URL functionality failed")
+            # Image data functionality (updated feature)
+            if not self.test_image_data_functionality():
+                print("❌ Image data functionality failed")
                 return False
             
             # Search functionality
