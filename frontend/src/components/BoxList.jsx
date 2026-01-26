@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const BoxList = () => {
   const [boxes, setBoxes] = useState([]);
@@ -38,7 +39,8 @@ export const BoxList = () => {
         axios.get(`${API}/boxes/locations`)
       ]);
       setBoxes(boxesRes.data);
-      setCategories(categoriesRes.data);
+      // Ordina categorie alfabeticamente
+      setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'it')));
       setLocations(locationsRes.data);
     } catch (error) {
       toast.error("Errore nel caricamento dati");
@@ -95,7 +97,8 @@ export const BoxList = () => {
     }
   };
 
-  const openEditDialog = (box) => {
+  const openEditDialog = (box, e) => {
+    if (e) e.stopPropagation();
     setEditingBox(box);
     setFormData({
       name: box.name,
@@ -111,7 +114,8 @@ export const BoxList = () => {
     setIsDialogOpen(true);
   };
 
-  const openQRDialog = (box) => {
+  const openQRDialog = (box, e) => {
+    if (e) e.stopPropagation();
     setSelectedBoxForQR(box);
     setIsQRDialogOpen(true);
   };
@@ -152,6 +156,20 @@ export const BoxList = () => {
     }
   };
 
+  // Previene chiusura accidentale del dialog
+  const handleDialogChange = (open) => {
+    if (!open && formData.name && formData.name !== editingBox?.name) {
+      if (!window.confirm("Sei sicuro di voler chiudere? I dati inseriti andranno persi.")) {
+        return;
+      }
+    }
+    setIsDialogOpen(open);
+    if (!open) {
+      setEditingBox(null);
+      setFormData({ name: "", category_id: "", location: "" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -160,22 +178,24 @@ export const BoxList = () => {
     );
   }
 
+  const useCompactView = boxes.length > 10;
+
   return (
     <div className="space-y-8 animate-slide-in-up" data-testid="box-list">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Contenitori</h1>
-          <p className="text-muted-foreground mt-1">{boxes.length} contenitori nel tuo archivio</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Gestione Contenitori</h1>
+          <p className="text-muted-foreground mt-1">Crea e organizza i contenitori (numerazione, categoria e posizione) con eventuale creazione e stampa del QR Code</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-box-btn">
               <Plus size={18} />
               Nuovo Contenitore
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>{editingBox ? "Modifica Contenitore" : "Nuovo Contenitore"}</DialogTitle>
             </DialogHeader>
@@ -221,7 +241,7 @@ export const BoxList = () => {
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-full">
+                <Button type="button" variant="outline" onClick={() => handleDialogChange(false)} className="rounded-full">
                   Annulla
                 </Button>
                 <Button type="submit" className="rounded-full" data-testid="save-box-btn">
@@ -293,7 +313,7 @@ export const BoxList = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Box Grid */}
+      {/* Box List */}
       {boxes.length === 0 ? (
         <div className="empty-state py-16">
           <Package className="text-muted-foreground/50 mb-4" size={64} />
@@ -304,7 +324,87 @@ export const BoxList = () => {
             Nuovo Contenitore
           </Button>
         </div>
+      ) : useCompactView ? (
+        // Vista compatta tabella per > 10 contenitori
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">#</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                  <TableHead className="hidden md:table-cell">Posizione</TableHead>
+                  <TableHead className="text-center">Oggetti</TableHead>
+                  <TableHead className="text-right w-32">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {boxes.map((box) => (
+                  <TableRow key={box.id} data-testid={`box-row-${box.box_number}`}>
+                    <TableCell className="font-mono font-bold">{box.box_number}</TableCell>
+                    <TableCell>
+                      <Link to={`/boxes/${box.id}`} className="font-medium hover:underline text-primary">
+                        {box.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {getCategoryName(box.category_id) && (
+                        <span 
+                          className="px-2 py-1 rounded-full text-xs font-medium"
+                          style={{ 
+                            backgroundColor: `${getCategoryColor(box.category_id)}20`,
+                            color: getCategoryColor(box.category_id)
+                          }}
+                        >
+                          {getCategoryName(box.category_id)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{box.location || "-"}</TableCell>
+                    <TableCell className="text-center">{box.items?.length || 0}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={(e) => openQRDialog(box, e)}>
+                          <QrCode size={16} />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={(e) => openEditDialog(box, e)}>
+                          <Edit2 size={16} />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 size={16} className="text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminare il contenitore?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Questa azione è irreversibile. Tutti gli oggetti nel contenitore verranno eliminati.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(box.id)}
+                                className="rounded-full bg-destructive"
+                              >
+                                Elimina
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : (
+        // Vista griglia per <= 10 contenitori
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {boxes.map((box, index) => (
             <Card 
@@ -321,7 +421,7 @@ export const BoxList = () => {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      onClick={() => openQRDialog(box)}
+                      onClick={(e) => openQRDialog(box, e)}
                       data-testid={`qr-box-${box.box_number}`}
                     >
                       <QrCode size={16} />
@@ -329,7 +429,7 @@ export const BoxList = () => {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      onClick={() => openEditDialog(box)}
+                      onClick={(e) => openEditDialog(box, e)}
                       data-testid={`edit-box-${box.box_number}`}
                     >
                       <Edit2 size={16} />
