@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { QRCodeSVG } from "qrcode.react";
-import { Package, Plus, Trash2, Edit2, ArrowLeft, MapPin, Calendar, Save, QrCode, Image } from "lucide-react";
+import { Package, Plus, Trash2, Edit2, ArrowLeft, MapPin, Calendar, Save, QrCode, Image, Camera, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,127 @@ const ItemImage = ({ url, name, size = "md" }) => {
   );
 };
 
+// Camera Capture Component
+const CameraCapture = ({ onCapture, onClose, currentImage }) => {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [stream, setStream] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [error, setError] = useState(null);
+  const [facingMode, setFacingMode] = useState("environment");
+
+  useEffect(() => {
+    startCamera();
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [facingMode]);
+
+  const startCamera = async () => {
+    try {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      setError(null);
+    } catch (err) {
+      console.error("Camera error:", err);
+      setError("Impossibile accedere alla fotocamera. Verifica i permessi.");
+    }
+  };
+
+  const switchCamera = () => {
+    setFacingMode(prev => prev === "environment" ? "user" : "environment");
+  };
+
+  const takePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      setCapturedImage(imageData);
+    }
+  };
+
+  const retakePhoto = () => {
+    setCapturedImage(null);
+  };
+
+  const confirmPhoto = () => {
+    if (capturedImage) {
+      onCapture(capturedImage);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {error ? (
+        <div className="text-center py-8">
+          <Camera className="mx-auto mb-4 text-muted-foreground" size={48} />
+          <p className="text-destructive">{error}</p>
+          <Button onClick={startCamera} className="mt-4 rounded-full">
+            Riprova
+          </Button>
+        </div>
+      ) : capturedImage ? (
+        <div className="space-y-4">
+          <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+            <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={retakePhoto} variant="outline" className="flex-1 rounded-full gap-2">
+              <RotateCcw size={18} />
+              Nuova foto
+            </Button>
+            <Button onClick={confirmPhoto} className="flex-1 rounded-full gap-2">
+              <Save size={18} />
+              Conferma
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={switchCamera} variant="outline" size="icon" className="rounded-full">
+              <RotateCcw size={18} />
+            </Button>
+            <Button onClick={takePhoto} className="flex-1 rounded-full gap-2">
+              <Camera size={18} />
+              Scatta foto
+            </Button>
+            <Button onClick={onClose} variant="outline" size="icon" className="rounded-full">
+              <X size={18} />
+            </Button>
+          </div>
+        </div>
+      )}
+      <canvas ref={canvasRef} className="hidden" />
+    </div>
+  );
+};
+
 export const BoxDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -51,8 +172,9 @@ export const BoxDetail = () => {
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isEditBoxDialogOpen, setIsEditBoxDialogOpen] = useState(false);
   const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [itemForm, setItemForm] = useState({ name: "", description: "", image_url: "" });
+  const [itemForm, setItemForm] = useState({ name: "", description: "", image_data: "" });
   const [boxForm, setBoxForm] = useState({ name: "", category_id: "", location: "", box_number: 0 });
 
   useEffect(() => {
@@ -74,7 +196,7 @@ export const BoxDetail = () => {
         box_number: boxRes.data.box_number
       });
     } catch (error) {
-      toast.error("Scatola non trovata");
+      toast.error("Contenitore non trovato");
       navigate("/boxes");
     } finally {
       setLoading(false);
@@ -84,16 +206,22 @@ export const BoxDetail = () => {
   const handleAddItem = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        name: itemForm.name,
+        description: itemForm.description,
+        image_data: itemForm.image_data || ""
+      };
+      
       if (editingItem) {
-        await axios.put(`${API}/boxes/${id}/items/${editingItem.id}`, itemForm);
+        await axios.put(`${API}/boxes/${id}/items/${editingItem.id}`, payload);
         toast.success("Oggetto modificato");
       } else {
-        await axios.post(`${API}/boxes/${id}/items`, itemForm);
+        await axios.post(`${API}/boxes/${id}/items`, payload);
         toast.success("Oggetto aggiunto");
       }
       setIsItemDialogOpen(false);
       setEditingItem(null);
-      setItemForm({ name: "", description: "", image_url: "" });
+      setItemForm({ name: "", description: "", image_data: "" });
       fetchData();
     } catch (error) {
       toast.error("Errore nel salvare l'oggetto");
@@ -114,7 +242,7 @@ export const BoxDetail = () => {
     e.preventDefault();
     try {
       await axios.put(`${API}/boxes/${id}`, boxForm);
-      toast.success("Scatola modificata");
+      toast.success("Contenitore modificato");
       setIsEditBoxDialogOpen(false);
       fetchData();
     } catch (error) {
@@ -127,15 +255,24 @@ export const BoxDetail = () => {
     setItemForm({ 
       name: item.name, 
       description: item.description || "",
-      image_url: item.image_url || ""
+      image_data: item.image_data || ""
     });
     setIsItemDialogOpen(true);
   };
 
   const openNewItemDialog = () => {
     setEditingItem(null);
-    setItemForm({ name: "", description: "", image_url: "" });
+    setItemForm({ name: "", description: "", image_data: "" });
     setIsItemDialogOpen(true);
+  };
+
+  const handleCameraCapture = (imageData) => {
+    setItemForm({ ...itemForm, image_data: imageData });
+    setIsCameraOpen(false);
+  };
+
+  const removeImage = () => {
+    setItemForm({ ...itemForm, image_data: "" });
   };
 
   const getCategoryName = (categoryId) => {
@@ -158,7 +295,7 @@ export const BoxDetail = () => {
       printWindow.document.write(`
         <html>
           <head>
-            <title>QR Code Scatola #${box.box_number}</title>
+            <title>QR Code Contenitore #${box.box_number}</title>
             <style>
               body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
               h1 { font-size: 24px; margin-bottom: 20px; }
@@ -192,7 +329,7 @@ export const BoxDetail = () => {
       {/* Back Button */}
       <Link to="/boxes" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft size={18} />
-        <span>Torna alle scatole</span>
+        <span>Torna ai contenitori</span>
       </Link>
 
       {/* Box Header */}
@@ -214,7 +351,7 @@ export const BoxDetail = () => {
                   )}
                   <div className="flex items-center gap-1">
                     <Calendar size={14} />
-                    <span>Creata: {formatDate(box.created_at)}</span>
+                    <span>Creato: {formatDate(box.created_at)}</span>
                   </div>
                   {getCategoryName(box.category_id) && (
                     <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
@@ -234,13 +371,13 @@ export const BoxDetail = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-sm text-center">
                   <DialogHeader>
-                    <DialogTitle>QR Code Scatola #{box.box_number}</DialogTitle>
+                    <DialogTitle>QR Code Contenitore #{box.box_number}</DialogTitle>
                   </DialogHeader>
                   <div className="flex flex-col items-center gap-4 py-4">
                     <div className="p-4 bg-white rounded-2xl">
                       <QRCodeSVG
                         id="qr-code-detail"
-                        value={`Scatola #${box.box_number}`}
+                        value={`Contenitore #${box.box_number}`}
                         size={200}
                         level="H"
                       />
@@ -262,11 +399,11 @@ export const BoxDetail = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Modifica Scatola</DialogTitle>
+                    <DialogTitle>Modifica Contenitore</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleEditBox} className="space-y-4">
                     <div>
-                      <Label htmlFor="box_number">Numero Scatola</Label>
+                      <Label htmlFor="box_number">Numero Contenitore</Label>
                       <Input
                         id="box_number"
                         type="number"
@@ -336,7 +473,12 @@ export const BoxDetail = () => {
       {/* Items Section */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Contenuto ({box.items?.length || 0} oggetti)</h2>
-        <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
+        <Dialog open={isItemDialogOpen} onOpenChange={(open) => {
+          setIsItemDialogOpen(open);
+          if (!open) {
+            setIsCameraOpen(false);
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewItemDialog} data-testid="add-item-btn">
               <Plus size={18} />
@@ -347,61 +489,91 @@ export const BoxDetail = () => {
             <DialogHeader>
               <DialogTitle>{editingItem ? "Modifica Oggetto" : "Nuovo Oggetto"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddItem} className="space-y-4">
-              <div>
-                <Label htmlFor="item_name">Nome</Label>
-                <Input
-                  id="item_name"
-                  value={itemForm.name}
-                  onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-                  placeholder="es. Libro di cucina"
-                  required
-                  className="mt-1"
-                  data-testid="item-name-input"
-                />
-              </div>
-              <div>
-                <Label htmlFor="item_description">Descrizione (opzionale)</Label>
-                <Textarea
-                  id="item_description"
-                  value={itemForm.description}
-                  onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                  placeholder="Aggiungi dettagli sull'oggetto..."
-                  className="mt-1"
-                  rows={3}
-                  data-testid="item-description-input"
-                />
-              </div>
-              <div>
-                <Label htmlFor="item_image_url">URL Immagine (opzionale)</Label>
-                <Input
-                  id="item_image_url"
-                  value={itemForm.image_url}
-                  onChange={(e) => setItemForm({ ...itemForm, image_url: e.target.value })}
-                  placeholder="https://esempio.com/immagine.jpg"
-                  className="mt-1"
-                  data-testid="item-image-url-input"
-                />
-                {itemForm.image_url && (
-                  <div className="mt-2 rounded-lg overflow-hidden border border-border">
-                    <img 
-                      src={itemForm.image_url} 
-                      alt="Anteprima" 
-                      className="w-full h-32 object-cover"
-                      onError={(e) => e.target.style.display = 'none'}
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsItemDialogOpen(false)} className="rounded-full">
-                  Annulla
-                </Button>
-                <Button type="submit" className="rounded-full" data-testid="save-item-btn">
-                  {editingItem ? "Salva" : "Aggiungi"}
-                </Button>
-              </div>
-            </form>
+            {isCameraOpen ? (
+              <CameraCapture 
+                onCapture={handleCameraCapture} 
+                onClose={() => setIsCameraOpen(false)}
+                currentImage={itemForm.image_data}
+              />
+            ) : (
+              <form onSubmit={handleAddItem} className="space-y-4">
+                <div>
+                  <Label htmlFor="item_name">Nome</Label>
+                  <Input
+                    id="item_name"
+                    value={itemForm.name}
+                    onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
+                    placeholder="es. Libro di cucina"
+                    required
+                    className="mt-1"
+                    data-testid="item-name-input"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="item_description">Descrizione (opzionale)</Label>
+                  <Textarea
+                    id="item_description"
+                    value={itemForm.description}
+                    onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+                    placeholder="Aggiungi dettagli sull'oggetto..."
+                    className="mt-1"
+                    rows={3}
+                    data-testid="item-description-input"
+                  />
+                </div>
+                <div>
+                  <Label>Foto (opzionale)</Label>
+                  {itemForm.image_data ? (
+                    <div className="mt-2 space-y-2">
+                      <div className="relative rounded-xl overflow-hidden border border-border">
+                        <img 
+                          src={itemForm.image_data} 
+                          alt="Preview" 
+                          className="w-full h-32 object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                          onClick={removeImage}
+                        >
+                          <X size={16} />
+                        </Button>
+                      </div>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        className="w-full rounded-full gap-2"
+                        onClick={() => setIsCameraOpen(true)}
+                      >
+                        <Camera size={16} />
+                        Scatta nuova foto
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="w-full mt-2 rounded-full gap-2"
+                      onClick={() => setIsCameraOpen(true)}
+                      data-testid="open-camera-btn"
+                    >
+                      <Camera size={16} />
+                      Scatta foto
+                    </Button>
+                  )}
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsItemDialogOpen(false)} className="rounded-full">
+                    Annulla
+                  </Button>
+                  <Button type="submit" className="rounded-full" data-testid="save-item-btn">
+                    {editingItem ? "Salva" : "Aggiungi"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -410,8 +582,8 @@ export const BoxDetail = () => {
       {box.items?.length === 0 ? (
         <div className="empty-state py-16">
           <Package className="text-muted-foreground/50 mb-4" size={64} />
-          <h3 className="text-xl font-semibold mb-2">Scatola vuota</h3>
-          <p className="text-muted-foreground mb-4">Aggiungi il primo oggetto a questa scatola</p>
+          <h3 className="text-xl font-semibold mb-2">Contenitore vuoto</h3>
+          <p className="text-muted-foreground mb-4">Aggiungi il primo oggetto a questo contenitore</p>
           <Button className="rounded-full" onClick={openNewItemDialog}>
             <Plus size={18} className="mr-2" />
             Aggiungi Oggetto
@@ -427,7 +599,7 @@ export const BoxDetail = () => {
             >
               <CardContent className="p-4">
                 <div className="flex gap-4">
-                  <ItemImage url={item.image_url} name={item.name} size="lg" />
+                  <ItemImage url={item.image_data} name={item.name} size="lg" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div>
