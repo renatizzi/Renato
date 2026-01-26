@@ -7,21 +7,23 @@ import { Search, Mic, MicOff, Package, ArrowRight, X, Image } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Image component with error handling
-const ItemImage = ({ url, name }) => {
+const ItemImage = ({ url, name, size = "md" }) => {
   const [hasError, setHasError] = useState(false);
+  const sizeClasses = size === "sm" ? "w-10 h-10" : "w-16 h-16";
 
   if (hasError || !url) {
     return (
-      <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-        <Image className="text-muted-foreground" size={20} />
+      <div className={`${sizeClasses} rounded-xl bg-muted flex items-center justify-center flex-shrink-0`}>
+        <Image className="text-muted-foreground" size={size === "sm" ? 14 : 20} />
       </div>
     );
   }
 
   return (
-    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
+    <div className={`${sizeClasses} rounded-xl overflow-hidden flex-shrink-0 bg-muted`}>
       <img 
         src={url} 
         alt={name}
@@ -134,12 +136,14 @@ export const SearchPage = () => {
     inputRef.current?.focus();
   };
 
+  const useCompactView = results.length > 10;
+
   return (
     <div className="space-y-8 animate-slide-in-up" data-testid="search-page">
       {/* Header */}
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Cerca</h1>
-        <p className="text-muted-foreground mt-1">Trova oggetti nel tuo archivio</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Ricerca Avanzata</h1>
+        <p className="text-muted-foreground mt-1">Trova gli oggetti custoditi nei contenitori mediante ricerca testuale o vocale</p>
       </div>
 
       {/* Search Box */}
@@ -214,7 +218,64 @@ export const SearchPage = () => {
             <h3 className="text-xl font-semibold mb-2">Nessun risultato</h3>
             <p className="text-muted-foreground">Prova con un termine diverso</p>
           </div>
+        ) : useCompactView ? (
+          // Vista compatta tabella per > 10 risultati
+          <div className="space-y-4">
+            <p className="text-muted-foreground">{results.length} risultati trovati</p>
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">Foto</TableHead>
+                      <TableHead>Oggetto</TableHead>
+                      <TableHead className="hidden md:table-cell">Contenitore</TableHead>
+                      <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                      <TableHead className="w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((result) => (
+                      <TableRow key={`${result.box_id}-${result.item_id}`}>
+                        <TableCell>
+                          <ItemImage url={result.item_image_data} name={result.item_name} size="sm" />
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{result.item_name}</p>
+                            {result.item_description && (
+                              <p className="text-xs text-muted-foreground truncate max-w-xs">{result.item_description}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <span className="font-mono text-primary">#{result.box_number}</span>
+                          <span className="text-muted-foreground ml-2">{result.box_name}</span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {result.category_name && (
+                            <span className="px-2 py-0.5 rounded-full bg-secondary text-xs">
+                              {result.category_name}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Link 
+                            to={`/boxes/${result.box_id}`}
+                            className="p-2 rounded-full hover:bg-secondary transition-colors inline-flex"
+                          >
+                            <ArrowRight size={16} className="text-muted-foreground" />
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
+          // Vista griglia per <= 10 risultati
           <div className="space-y-4">
             <p className="text-muted-foreground">{results.length} risultati trovati</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

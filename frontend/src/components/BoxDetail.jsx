@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { QRCodeSVG } from "qrcode.react";
-import { Package, Plus, Trash2, Edit2, ArrowLeft, MapPin, Calendar, Save, QrCode, Image, Camera, X, RotateCcw } from "lucide-react";
+import { Package, Plus, Trash2, Edit2, MapPin, Calendar, Save, QrCode, Image, Camera, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Image component with error handling
 const ItemImage = ({ url, name, size = "md" }) => {
   const [hasError, setHasError] = useState(false);
-  const sizeClasses = size === "lg" ? "w-20 h-20" : "w-16 h-16";
-  const iconSize = size === "lg" ? 24 : 20;
+  const sizeClasses = size === "lg" ? "w-20 h-20" : size === "sm" ? "w-12 h-12" : "w-16 h-16";
+  const iconSize = size === "lg" ? 24 : size === "sm" ? 16 : 20;
 
   if (hasError || !url) {
     return (
@@ -188,7 +189,7 @@ export const BoxDetail = () => {
         axios.get(`${API}/categories`)
       ]);
       setBox(boxRes.data);
-      setCategories(categoriesRes.data);
+      setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'it')));
       setBoxForm({
         name: boxRes.data.name,
         category_id: boxRes.data.category_id || "",
@@ -250,7 +251,8 @@ export const BoxDetail = () => {
     }
   };
 
-  const openEditItemDialog = (item) => {
+  const openEditItemDialog = (item, e) => {
+    if (e) e.stopPropagation();
     setEditingItem(item);
     setItemForm({ 
       name: item.name, 
@@ -314,6 +316,30 @@ export const BoxDetail = () => {
     }
   };
 
+  // Previene chiusura accidentale del dialog
+  const handleItemDialogChange = (open) => {
+    if (!open && itemForm.name && itemForm.name !== editingItem?.name) {
+      if (!window.confirm("Sei sicuro di voler chiudere? I dati inseriti andranno persi.")) {
+        return;
+      }
+    }
+    setIsItemDialogOpen(open);
+    if (!open) {
+      setIsCameraOpen(false);
+      setEditingItem(null);
+      setItemForm({ name: "", description: "", image_data: "" });
+    }
+  };
+
+  const handleBoxDialogChange = (open) => {
+    if (!open && boxForm.name !== box?.name) {
+      if (!window.confirm("Sei sicuro di voler chiudere? I dati inseriti andranno persi.")) {
+        return;
+      }
+    }
+    setIsEditBoxDialogOpen(open);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -324,14 +350,10 @@ export const BoxDetail = () => {
 
   if (!box) return null;
 
+  const useCompactView = (box.items?.length || 0) > 10;
+
   return (
     <div className="space-y-8 animate-slide-in-up" data-testid="box-detail">
-      {/* Back Button */}
-      <Link to="/boxes" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={18} />
-        <span>Torna ai contenitori</span>
-      </Link>
-
       {/* Box Header */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="p-6">
@@ -390,14 +412,14 @@ export const BoxDetail = () => {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Dialog open={isEditBoxDialogOpen} onOpenChange={setIsEditBoxDialogOpen}>
+              <Dialog open={isEditBoxDialogOpen} onOpenChange={handleBoxDialogChange}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="rounded-full gap-2" data-testid="edit-box-details-btn">
                     <Edit2 size={16} />
                     Modifica
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle>Modifica Contenitore</DialogTitle>
                   </DialogHeader>
@@ -454,7 +476,7 @@ export const BoxDetail = () => {
                       />
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setIsEditBoxDialogOpen(false)} className="rounded-full">
+                      <Button type="button" variant="outline" onClick={() => handleBoxDialogChange(false)} className="rounded-full">
                         Annulla
                       </Button>
                       <Button type="submit" className="rounded-full" data-testid="save-box-details-btn">
@@ -470,22 +492,20 @@ export const BoxDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Items Section */}
+      {/* Items Section Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Contenuto ({box.items?.length || 0} oggetti)</h2>
-        <Dialog open={isItemDialogOpen} onOpenChange={(open) => {
-          setIsItemDialogOpen(open);
-          if (!open) {
-            setIsCameraOpen(false);
-          }
-        }}>
+        <div>
+          <h2 className="text-xl font-bold">Gestione Oggetti</h2>
+          <p className="text-sm text-muted-foreground">Crea e organizza gli oggetti dei singoli contenitori (nome oggetto, descrizione, eventuale foto)</p>
+        </div>
+        <Dialog open={isItemDialogOpen} onOpenChange={handleItemDialogChange}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewItemDialog} data-testid="add-item-btn">
               <Plus size={18} />
-              Aggiungi Oggetto
+              Aggiungi
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>{editingItem ? "Modifica Oggetto" : "Nuovo Oggetto"}</DialogTitle>
             </DialogHeader>
@@ -565,7 +585,7 @@ export const BoxDetail = () => {
                   )}
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsItemDialogOpen(false)} className="rounded-full">
+                  <Button type="button" variant="outline" onClick={() => handleItemDialogChange(false)} className="rounded-full">
                     Annulla
                   </Button>
                   <Button type="submit" className="rounded-full" data-testid="save-item-btn">
@@ -589,7 +609,72 @@ export const BoxDetail = () => {
             Aggiungi Oggetto
           </Button>
         </div>
+      ) : useCompactView ? (
+        // Vista compatta tabella per > 10 oggetti
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">Foto</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">Descrizione</TableHead>
+                  <TableHead className="hidden md:table-cell">Data</TableHead>
+                  <TableHead className="text-right w-24">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {box.items.map((item) => (
+                  <TableRow key={item.id} data-testid={`item-row-${item.id}`}>
+                    <TableCell>
+                      <ItemImage url={item.image_data} name={item.name} size="sm" />
+                    </TableCell>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground max-w-xs truncate">
+                      {item.description || "-"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm font-mono">
+                      {formatDate(item.created_at)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={(e) => openEditItemDialog(item, e)}>
+                          <Edit2 size={16} />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 size={16} className="text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminare l'oggetto?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                L'oggetto "{item.name}" verrà eliminato permanentemente.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteItem(item.id)}
+                                className="rounded-full bg-destructive"
+                              >
+                                Elimina
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : (
+        // Vista griglia per <= 10 oggetti
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {box.items.map((item, index) => (
             <Card 
@@ -615,7 +700,7 @@ export const BoxDetail = () => {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => openEditItemDialog(item)}
+                          onClick={(e) => openEditItemDialog(item, e)}
                           data-testid={`edit-item-${item.id}`}
                         >
                           <Edit2 size={16} />

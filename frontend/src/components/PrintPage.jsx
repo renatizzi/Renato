@@ -4,12 +4,12 @@ import { API } from "@/App";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Printer, Download, FileSpreadsheet, CheckSquare, Square, Package } from "lucide-react";
+import { Printer, FileSpreadsheet, CheckSquare, Square, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const PrintPage = () => {
   const [boxes, setBoxes] = useState([]);
@@ -109,8 +109,8 @@ export const PrintPage = () => {
       {/* Header - no-print */}
       <div className="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Stampa & Esporta</h1>
-          <p className="text-muted-foreground mt-1">Seleziona i contenitori da stampare o esportare</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Esporta & Stampa</h1>
+          <p className="text-muted-foreground mt-1">Esporta l'archivio in un file CSV per l'elaborazione immediata con altre applicazioni e Stampa liste complete o parziali dell'archivio</p>
         </div>
         <div className="flex gap-3">
           <Button 
@@ -167,29 +167,37 @@ export const PrintPage = () => {
             </p>
           </div>
           <Separator className="my-4" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {boxes.map(box => (
-              <div 
-                key={box.id}
-                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                  selectedBoxes.includes(box.id) ? 'bg-primary/10' : 'hover:bg-secondary'
-                }`}
-                onClick={() => toggleBox(box.id)}
-                data-testid={`select-box-${box.box_number}`}
-              >
-                <Checkbox 
-                  checked={selectedBoxes.includes(box.id)}
-                  onCheckedChange={() => toggleBox(box.id)}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    <span className="font-mono">#{box.box_number}</span> - {box.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{box.items?.length || 0} oggetti</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Vista compatta per selezione */}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12"></TableHead>
+                <TableHead className="w-16">#</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead className="text-center">Oggetti</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {boxes.map(box => (
+                <TableRow 
+                  key={box.id}
+                  className="cursor-pointer"
+                  onClick={() => toggleBox(box.id)}
+                  data-testid={`select-box-${box.box_number}`}
+                >
+                  <TableCell>
+                    <Checkbox 
+                      checked={selectedBoxes.includes(box.id)}
+                      onCheckedChange={() => toggleBox(box.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-mono font-bold">{box.box_number}</TableCell>
+                  <TableCell className="font-medium">{box.name}</TableCell>
+                  <TableCell className="text-center">{box.items?.length || 0}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
