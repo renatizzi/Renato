@@ -59,7 +59,7 @@ class CategoryCreate(CategoryBase):
 class ItemBase(BaseModel):
     name: str
     description: Optional[str] = ""
-    image_url: Optional[str] = ""
+    image_data: Optional[str] = ""  # Base64 image data
 
 class Item(ItemBase):
     model_config = ConfigDict(extra="ignore")
@@ -96,7 +96,7 @@ class BoxUpdate(BaseModel):
 class ItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    image_url: Optional[str] = None
+    image_data: Optional[str] = None
 
 class SearchResult(BaseModel):
     box_id: str
@@ -105,7 +105,7 @@ class SearchResult(BaseModel):
     item_id: str
     item_name: str
     item_description: str
-    item_image_url: Optional[str] = None
+    item_image_data: Optional[str] = None
     category_name: Optional[str] = None
 
 # ==================== PASSWORD HELPERS ====================
@@ -348,8 +348,8 @@ async def update_item(box_id: str, item_id: str, input: ItemUpdate):
                 item['name'] = input.name
             if input.description is not None:
                 item['description'] = input.description
-            if input.image_url is not None:
-                item['image_url'] = input.image_url
+            if input.image_data is not None:
+                item['image_data'] = input.image_data
             item_found = True
             break
     
@@ -427,7 +427,7 @@ async def search_items(q: str = Query(..., min_length=1)):
                     item_id=item['id'],
                     item_name=item['name'],
                     item_description=item.get('description', ''),
-                    item_image_url=item.get('image_url', ''),
+                    item_image_data=item.get('image_data', ''),
                     category_name=categories.get(box.get('category_id'))
                 ))
     
@@ -463,7 +463,7 @@ async def export_csv(box_ids: Optional[str] = None):
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Numero Scatola", "Nome Scatola", "Categoria", "Posizione", "Nome Oggetto", "Descrizione", "URL Immagine", "Data Inserimento"])
+    writer.writerow(["Numero Contenitore", "Nome Contenitore", "Categoria", "Posizione", "Nome Oggetto", "Descrizione", "Data Inserimento"])
     
     for box in boxes:
         category_name = categories.get(box.get('category_id'), "")
@@ -473,7 +473,6 @@ async def export_csv(box_ids: Optional[str] = None):
                 box['name'],
                 category_name,
                 box.get('location', ''),
-                "",
                 "",
                 "",
                 box.get('created_at', '')
@@ -487,7 +486,6 @@ async def export_csv(box_ids: Optional[str] = None):
                     box.get('location', ''),
                     item['name'],
                     item.get('description', ''),
-                    item.get('image_url', ''),
                     item.get('created_at', '')
                 ])
     
