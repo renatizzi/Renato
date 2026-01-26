@@ -59,12 +59,20 @@ App per gestire un archivio di oggetti personali con numerazione univoca scatole
 - **Pagina Impostazioni**: Nuova sezione per gestire password e backup
 - Password salvata in MongoDB (modificabile a runtime)
 
+## What's Implemented (24 Gen 2025) - Update 3
+- **Nuova Dashboard**: "Riepilogo contenitori" con tabella menu funzionalità
+- **Menu Altre Funzioni**: Dialog con QR Code, Stampa, Export, Backup, Ripristino, Password
+- **Terminologia**: "Scatola" → "Contenitore" in tutta l'app
+- **Acquisizione Foto**: Fotocamera dispositivo invece di URL (base64)
+- Descrizioni dettagliate per ogni funzionalità
+- Contatori per categorie, contenitori e oggetti
+
 ## Backlog / Next Features (P0-P2)
 ### P1
 - Ordinamento risultati ricerca
-- Upload file immagini (storage server)
+- Compressione immagini per ridurre storage
 
 ### P2
 - Dark mode
 - Condivisione archivio con altri utenti
-- Notifiche per scatole non aggiornate da tempo
+- Notifiche per contenitori non aggiornati da tempo
