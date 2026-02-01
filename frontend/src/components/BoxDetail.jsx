@@ -47,59 +47,135 @@ const ItemImage = ({ url, name, size = "md" }) => {
 const CameraCapture = ({ onCapture, onClose, currentImage }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  const streamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [error, setError] = useState(null);
   const [facingMode, setFacingMode] = useState("environment");
+  const [isLoading, setIsLoading] = useState(true);
+  const [cameraReady, setCameraReady] = useState(false);
+
+  // Cleanup function
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraReady(false);
+  };
+
+  // Start camera
+  const startCamera = async () => {
+    setIsLoading(true);
+    setError(null);
+    setCameraReady(false);
+    
+    // Stop existing stream first
+    stopCamera();
+
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError("Il tuo browser non supporta l'accesso alla fotocamera.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const constraints = {
+        video: { 
+          facingMode: facingMode,
+          width: { ideal: 1280, max: 1920 }, 
+          height: { ideal: 720, max: 1080 }
+        },
+        audio: false
+      };
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = mediaStream;
+      
+      // Wait for video element to be ready
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        
+        // Wait for video to be ready to play
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play()
+            .then(() => {
+              setCameraReady(true);
+              setIsLoading(false);
+            })
+            .catch((playErr) => {
+              console.error("Video play error:", playErr);
+              setError("Errore nell'avvio del video.");
+              setIsLoading(false);
+            });
+        };
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      let errorMessage = "Impossibile accedere alla fotocamera.";
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMessage = "Permesso fotocamera negato. Abilita l'accesso nelle impostazioni del browser.";
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMessage = "Nessuna fotocamera trovata sul dispositivo.";
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMessage = "La fotocamera è in uso da un'altra applicazione.";
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage = "Impostazioni fotocamera non supportate. Riprova.";
+      } else if (err.name === 'TypeError') {
+        errorMessage = "Errore di configurazione della fotocamera.";
+      }
+      
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     startCamera();
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+      stopCamera();
     };
   }, [facingMode]);
-
-  const startCamera = async () => {
-    try {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-      setError(null);
-    } catch (err) {
-      console.error("Camera error:", err);
-      setError("Impossibile accedere alla fotocamera. Verifica i permessi.");
-    }
-  };
 
   const switchCamera = () => {
     setFacingMode(prev => prev === "environment" ? "user" : "environment");
   };
 
   const takePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(imageData);
+    if (!cameraReady || !videoRef.current || !canvasRef.current) {
+      toast.error("Fotocamera non pronta. Attendi qualche secondo.");
+      return;
     }
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    // Ensure video has dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast.error("Video non pronto. Riprova.");
+      return;
+    }
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedImage(imageData);
+    
+    // Stop camera after taking photo to save resources
+    stopCamera();
   };
 
   const retakePhoto = () => {
     setCapturedImage(null);
+    startCamera();
   };
 
   const confirmPhoto = () => {
@@ -108,15 +184,28 @@ const CameraCapture = ({ onCapture, onClose, currentImage }) => {
     }
   };
 
+  const handleClose = () => {
+    stopCamera();
+    onClose();
+  };
+
   return (
     <div className="space-y-4">
       {error ? (
         <div className="text-center py-8">
           <Camera className="mx-auto mb-4 text-muted-foreground" size={48} />
-          <p className="text-destructive">{error}</p>
-          <Button onClick={startCamera} className="mt-4 rounded-full">
-            Riprova
-          </Button>
+          <p className="text-destructive mb-2">{error}</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Assicurati di aver concesso i permessi per la fotocamera.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={startCamera} className="rounded-full">
+              Riprova
+            </Button>
+            <Button onClick={handleClose} variant="outline" className="rounded-full">
+              Chiudi
+            </Button>
+          </div>
         </div>
       ) : capturedImage ? (
         <div className="space-y-4">
@@ -137,6 +226,14 @@ const CameraCapture = ({ onCapture, onClose, currentImage }) => {
       ) : (
         <div className="space-y-4">
           <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                  <p className="text-white text-sm">Avvio fotocamera...</p>
+                </div>
+              </div>
+            )}
             <video 
               ref={videoRef} 
               autoPlay 
@@ -146,14 +243,25 @@ const CameraCapture = ({ onCapture, onClose, currentImage }) => {
             />
           </div>
           <div className="flex gap-2">
-            <Button onClick={switchCamera} variant="outline" size="icon" className="rounded-full">
+            <Button 
+              onClick={switchCamera} 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full"
+              disabled={isLoading}
+              title="Cambia fotocamera"
+            >
               <RotateCcw size={18} />
             </Button>
-            <Button onClick={takePhoto} className="flex-1 rounded-full gap-2">
+            <Button 
+              onClick={takePhoto} 
+              className="flex-1 rounded-full gap-2"
+              disabled={!cameraReady}
+            >
               <Camera size={18} />
-              Scatta foto
+              {cameraReady ? "Scatta foto" : "Attendi..."}
             </Button>
-            <Button onClick={onClose} variant="outline" size="icon" className="rounded-full">
+            <Button onClick={handleClose} variant="outline" size="icon" className="rounded-full">
               <X size={18} />
             </Button>
           </div>
