@@ -44,6 +44,10 @@ class PasswordChange(BaseModel):
 class PasswordReset(BaseModel):
     master_password: str
 
+class UserSettings(BaseModel):
+    username: str = ""
+    password_enabled: bool = True
+
 class CategoryBase(BaseModel):
     name: str
     color: str = "#4A6741"
@@ -125,14 +129,82 @@ async def set_app_password(new_password: str):
         upsert=True
     )
 
+async def get_username():
+    """Get username from DB"""
+    settings = await db.settings.find_one({"key": "username"}, {"_id": 0})
+    return settings.get("value", "") if settings else ""
+
+async def set_username(username: str):
+    """Set username in DB"""
+    await db.settings.update_one(
+        {"key": "username"},
+        {"$set": {"key": "username", "value": username}},
+        upsert=True
+    )
+
+async def is_password_enabled():
+    """Check if password is enabled"""
+    settings = await db.settings.find_one({"key": "password_enabled"}, {"_id": 0})
+    return settings.get("value", True) if settings else True
+
+async def set_password_enabled(enabled: bool):
+    """Set password enabled/disabled"""
+    await db.settings.update_one(
+        {"key": "password_enabled"},
+        {"$set": {"key": "password_enabled", "value": enabled}},
+        upsert=True
+    )
+
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/verify")
 async def verify_password(input: PasswordCheck):
+    password_enabled = await is_password_enabled()
+    if not password_enabled:
+        return {"success": True, "message": "Password disabilitata", "password_enabled": False}
+    
     current_password = await get_app_password()
     if input.password == current_password:
-        return {"success": True, "message": "Password corretta"}
+        return {"success": True, "message": "Password corretta", "password_enabled": True}
     raise HTTPException(status_code=401, detail="Password errata")
+
+@api_router.get("/auth/check")
+async def check_auth():
+    """Check if password is required"""
+    password_enabled = await is_password_enabled()
+    username = await get_username()
+    return {"password_enabled": password_enabled, "username": username}
+
+@api_router.post("/auth/change-password")
+async def change_password(input: PasswordChange):
+    current_password = await get_app_password()
+    if input.current_password != current_password:
+        raise HTTPException(status_code=401, detail="Password attuale errata")
+    if len(input.new_password) < 4:
+        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 4 caratteri")
+    await set_app_password(input.new_password)
+    return {"success": True, "message": "Password modificata con successo"}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(input: PasswordReset):
+    if input.master_password != MASTER_PASSWORD:
+        raise HTTPException(status_code=401, detail="Master password errata")
+    await set_app_password(DEFAULT_PASSWORD)
+    return {"success": True, "message": f"Password ripristinata a: {DEFAULT_PASSWORD}"}
+
+@api_router.post("/auth/settings")
+async def update_user_settings(input: UserSettings):
+    """Update username and password enabled setting"""
+    await set_username(input.username)
+    await set_password_enabled(input.password_enabled)
+    return {"success": True, "message": "Impostazioni salvate", "username": input.username, "password_enabled": input.password_enabled}
+
+@api_router.get("/auth/settings")
+async def get_user_settings():
+    """Get user settings"""
+    username = await get_username()
+    password_enabled = await is_password_enabled()
+    return {"username": username, "password_enabled": password_enabled}
 
 @api_router.post("/auth/change-password")
 async def change_password(input: PasswordChange):
