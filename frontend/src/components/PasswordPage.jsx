@@ -1,12 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/App";
 import { toast } from "sonner";
-import { Key, RotateCcw, Save, AlertTriangle } from "lucide-react";
+import { Key, RotateCcw, Save, AlertTriangle, User, Shield, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const PasswordPage = ({ onLogout }) => {
@@ -15,6 +16,45 @@ export const PasswordPage = ({ onLogout }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [masterPassword, setMasterPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Settings state
+  const [username, setUsername] = useState("");
+  const [passwordEnabled, setPasswordEnabled] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/settings`);
+      setUsername(response.data.username || "");
+      setPasswordEnabled(response.data.password_enabled !== false);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    try {
+      await axios.post(`${API}/auth/settings`, {
+        username: username,
+        password_enabled: passwordEnabled
+      });
+      toast.success("Impostazioni salvate");
+      if (!passwordEnabled) {
+        toast.info("La password è ora disabilitata. L'accesso sarà libero.");
+      }
+    } catch (error) {
+      toast.error("Errore nel salvare le impostazioni");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -68,6 +108,14 @@ export const PasswordPage = ({ onLogout }) => {
     }
   };
 
+  if (settingsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-slide-in-up max-w-2xl" data-testid="password-page">
       {/* Header */}
@@ -76,14 +124,76 @@ export const PasswordPage = ({ onLogout }) => {
         <p className="text-muted-foreground mt-1">Gestisce la password di accesso con possibilità di ripristino di quella originale</p>
       </div>
 
-      {/* Change Password */}
+      {/* User Settings */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User size={20} />
+            Impostazioni Utente
+          </CardTitle>
+          <CardDescription>Configura il nome utente e le opzioni di accesso</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label htmlFor="username">Nome Utente</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Inserisci il tuo nome"
+              className="mt-1"
+              data-testid="username-input"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Questo nome verrà mostrato nell'app</p>
+          </div>
+          
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+            <div className="flex items-center gap-3">
+              {passwordEnabled ? (
+                <Shield className="text-primary" size={24} />
+              ) : (
+                <ShieldOff className="text-muted-foreground" size={24} />
+              )}
+              <div>
+                <p className="font-medium">Protezione Password</p>
+                <p className="text-sm text-muted-foreground">
+                  {passwordEnabled 
+                    ? "L'app richiede la password per accedere" 
+                    : "L'accesso all'app è libero senza password"}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={passwordEnabled}
+              onCheckedChange={setPasswordEnabled}
+              data-testid="password-enabled-switch"
+            />
+          </div>
+          
+          <Button 
+            onClick={handleSaveSettings}
+            className="rounded-full gap-2"
+            disabled={loading}
+            data-testid="save-settings-btn"
+          >
+            <Save size={16} />
+            Salva Impostazioni
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Change Password */}
+      <Card className={`border-border/50 bg-card/50 backdrop-blur-sm ${!passwordEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key size={20} />
             Modifica Password
           </CardTitle>
-          <CardDescription>Cambia la password di accesso all'app</CardDescription>
+          <CardDescription>
+            {passwordEnabled 
+              ? "Cambia la password di accesso all'app" 
+              : "Abilita la protezione password per modificare"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
@@ -96,6 +206,7 @@ export const PasswordPage = ({ onLogout }) => {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Inserisci la password attuale"
                 className="mt-1"
+                disabled={!passwordEnabled}
                 data-testid="current-password-input"
               />
             </div>
@@ -108,6 +219,7 @@ export const PasswordPage = ({ onLogout }) => {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Minimo 4 caratteri"
                 className="mt-1"
+                disabled={!passwordEnabled}
                 data-testid="new-password-input"
               />
             </div>
@@ -120,13 +232,14 @@ export const PasswordPage = ({ onLogout }) => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Ripeti la nuova password"
                 className="mt-1"
+                disabled={!passwordEnabled}
                 data-testid="confirm-password-input"
               />
             </div>
             <Button 
               type="submit" 
               className="rounded-full gap-2"
-              disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+              disabled={loading || !currentPassword || !newPassword || !confirmPassword || !passwordEnabled}
               data-testid="change-password-btn"
             >
               <Save size={16} />
