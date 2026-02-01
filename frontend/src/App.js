@@ -27,6 +27,33 @@ const LoginPage = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [passwordRequired, setPasswordRequired] = useState(true);
+
+  useEffect(() => {
+    checkPasswordRequired();
+  }, []);
+
+  const checkPasswordRequired = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/check`);
+      const isRequired = response.data.password_enabled !== false;
+      setPasswordRequired(isRequired);
+      
+      // If password is not required, auto-login
+      if (!isRequired) {
+        localStorage.setItem("archivio_auth", "true");
+        onLogin();
+        toast.success("Benvenuto!");
+      }
+    } catch (err) {
+      console.error("Auth check error:", err);
+      // Default to requiring password on error
+      setPasswordRequired(true);
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,6 +71,14 @@ const LoginPage = ({ onLogin }) => {
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
