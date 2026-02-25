@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/App";
+import { useLanguage } from "@/i18n";
 import { toast } from "sonner";
 import { Key, RotateCcw, Save, AlertTriangle, User, Shield, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const PasswordPage = ({ onLogout }) => {
+  const { t } = useLanguage();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,9 +47,9 @@ export const PasswordPage = ({ onLogout }) => {
         username: username,
         password_enabled: passwordEnabled
       });
-      toast.success("Impostazioni salvate");
+      toast.success(t('settingsSaved'));
       if (!passwordEnabled) {
-        toast.info("La password è ora disabilitata. L'accesso sarà libero.");
+        toast.info(t('passwordDisabled'));
       }
     } catch (error) {
       toast.error("Errore nel salvare le impostazioni");
