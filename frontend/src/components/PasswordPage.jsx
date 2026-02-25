@@ -131,22 +131,22 @@ export const PasswordPage = ({ onLogout }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User size={20} />
-            Impostazioni Utente
+            {t('userSettings')}
           </CardTitle>
-          <CardDescription>Configura il nome utente e le opzioni di accesso</CardDescription>
+          <CardDescription>{t('userSettingsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <Label htmlFor="username">Nome Utente</Label>
+            <Label htmlFor="username">{t('username')}</Label>
             <Input
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Inserisci il tuo nome"
+              placeholder={t('usernamePlaceholder')}
               className="mt-1"
               data-testid="username-input"
             />
-            <p className="text-xs text-muted-foreground mt-1">Questo nome verrà mostrato nell'app</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('usernameHelp')}</p>
           </div>
           
           <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
@@ -157,11 +157,11 @@ export const PasswordPage = ({ onLogout }) => {
                 <ShieldOff className="text-muted-foreground" size={24} />
               )}
               <div>
-                <p className="font-medium">Protezione Password</p>
+                <p className="font-medium">{t('passwordProtection')}</p>
                 <p className="text-sm text-muted-foreground">
                   {passwordEnabled 
-                    ? "L'app richiede la password per accedere" 
-                    : "L'accesso all'app è libero senza password"}
+                    ? t('passwordProtectionEnabled')
+                    : t('passwordProtectionDisabled')}
                 </p>
               </div>
             </div>
@@ -179,7 +179,7 @@ export const PasswordPage = ({ onLogout }) => {
             data-testid="save-settings-btn"
           >
             <Save size={16} />
-            Salva Impostazioni
+            {t('saveSettings')}
           </Button>
         </CardContent>
       </Card>
@@ -189,50 +189,50 @@ export const PasswordPage = ({ onLogout }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key size={20} />
-            Modifica Password
+            {t('changePassword')}
           </CardTitle>
           <CardDescription>
             {passwordEnabled 
-              ? "Cambia la password di accesso all'app" 
-              : "Abilita la protezione password per modificare"}
+              ? t('changePasswordDesc')
+              : t('enablePasswordFirst')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <Label htmlFor="current_password">Password Attuale</Label>
+              <Label htmlFor="current_password">{t('currentPassword')}</Label>
               <Input
                 id="current_password"
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Inserisci la password attuale"
+                placeholder={t('currentPasswordPlaceholder')}
                 className="mt-1"
                 disabled={!passwordEnabled}
                 data-testid="current-password-input"
               />
             </div>
             <div>
-              <Label htmlFor="new_password">Nuova Password</Label>
+              <Label htmlFor="new_password">{t('newPassword')}</Label>
               <Input
                 id="new_password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimo 4 caratteri"
+                placeholder={t('newPasswordPlaceholder')}
                 className="mt-1"
                 disabled={!passwordEnabled}
                 data-testid="new-password-input"
               />
             </div>
             <div>
-              <Label htmlFor="confirm_password">Conferma Nuova Password</Label>
+              <Label htmlFor="confirm_password">{t('confirmPassword')}</Label>
               <Input
                 id="confirm_password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ripeti la nuova password"
+                placeholder={t('confirmPasswordPlaceholder')}
                 className="mt-1"
                 disabled={!passwordEnabled}
                 data-testid="confirm-password-input"
@@ -245,7 +245,7 @@ export const PasswordPage = ({ onLogout }) => {
               data-testid="change-password-btn"
             >
               <Save size={16} />
-              Salva Nuova Password
+              {t('saveNewPassword')}
             </Button>
           </form>
         </CardContent>
