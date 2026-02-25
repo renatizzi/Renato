@@ -52,7 +52,7 @@ export const PasswordPage = ({ onLogout }) => {
         toast.info(t('passwordDisabled'));
       }
     } catch (error) {
-      toast.error("Errore nel salvare le impostazioni");
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -62,12 +62,12 @@ export const PasswordPage = ({ onLogout }) => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
-      toast.error("Le password non coincidono");
+      toast.error(t('passwordsDontMatch'));
       return;
     }
     
     if (newPassword.length < 4) {
-      toast.error("La password deve avere almeno 4 caratteri");
+      toast.error(t('passwordTooShort'));
       return;
     }
     
@@ -77,13 +77,13 @@ export const PasswordPage = ({ onLogout }) => {
         current_password: currentPassword,
         new_password: newPassword
       });
-      toast.success("Password modificata con successo");
+      toast.success(t('passwordChanged'));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       onLogout();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Errore nella modifica password");
+      toast.error(error.response?.data?.detail || t('error'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export const PasswordPage = ({ onLogout }) => {
 
   const handleResetPassword = async () => {
     if (!masterPassword) {
-      toast.error("Inserisci la master password");
+      toast.error(t('enterMasterPassword'));
       return;
     }
     
@@ -104,7 +104,7 @@ export const PasswordPage = ({ onLogout }) => {
       setMasterPassword("");
       onLogout();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Master password errata");
+      toast.error(error.response?.data?.detail || t('masterPasswordError'));
     } finally {
       setLoading(false);
     }
@@ -122,8 +122,8 @@ export const PasswordPage = ({ onLogout }) => {
     <div className="space-y-8 animate-slide-in-up max-w-2xl" data-testid="password-page">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Impostazione utente e password</h1>
-        <p className="text-sm text-muted-foreground mt-1">Consente di inserire il nome dell'utente e di gestire la password di accesso con possibilità di ripristino di quella originale</p>
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('passwordTitle')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('passwordDesc')}</p>
       </div>
 
       {/* User Settings */}
