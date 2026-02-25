@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
 import { toast } from "sonner";
-import { Package, Plus, Trash2, Edit2, MapPin, ArrowRight, QrCode } from "lucide-react";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
+import { Package, Plus, Trash2, Edit2, MapPin, ArrowRight, QrCode, Calendar } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const BoxList = () => {
   const [boxes, setBoxes] = useState([]);
@@ -39,7 +40,6 @@ export const BoxList = () => {
         axios.get(`${API}/boxes/locations`)
       ]);
       setBoxes(boxesRes.data);
-      // Ordina categorie alfabeticamente
       setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'it')));
       setLocations(locationsRes.data);
     } catch (error) {
@@ -125,9 +125,12 @@ export const BoxList = () => {
     return cat ? cat.name : null;
   };
 
-  const getCategoryColor = (categoryId) => {
-    const cat = categories.find(c => c.id === categoryId);
-    return cat ? cat.color : "#4A6741";
+  const formatDate = (dateStr) => {
+    try {
+      return format(new Date(dateStr), "d MMM yyyy", { locale: it });
+    } catch {
+      return "-";
+    }
   };
 
   const printQRCode = () => {
@@ -156,7 +159,6 @@ export const BoxList = () => {
     }
   };
 
-  // Previene chiusura accidentale del dialog
   const handleDialogChange = (open) => {
     if (!open && formData.name && formData.name !== editingBox?.name) {
       if (!window.confirm("Sei sicuro di voler chiudere? I dati inseriti andranno persi.")) {
@@ -178,15 +180,15 @@ export const BoxList = () => {
     );
   }
 
-  const useCompactView = boxes.length > 10;
-
   return (
-    <div className="space-y-8 animate-slide-in-up" data-testid="box-list">
+    <div className="space-y-6 animate-slide-in-up" data-testid="box-list">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Gestione Contenitori</h1>
-          <p className="text-muted-foreground mt-1">Crea e organizza i contenitori (numerazione, categoria e posizione) con eventuale creazione e stampa del QR Code</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Gestione Contenitori</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Crea e organizza i contenitori (numerazione, categoria e posizione) con eventuale creazione e stampa del QR Code
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
@@ -313,7 +315,7 @@ export const BoxList = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Box List */}
+      {/* Box List - Updated layout matching fig2 */}
       {boxes.length === 0 ? (
         <div className="empty-state py-16">
           <Package className="text-muted-foreground/50 mb-4" size={64} />
@@ -324,120 +326,76 @@ export const BoxList = () => {
             Nuovo Contenitore
           </Button>
         </div>
-      ) : useCompactView ? (
-        // Vista compatta tabella per > 10 contenitori
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16">#</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Categoria</TableHead>
-                  <TableHead className="hidden md:table-cell">Posizione</TableHead>
-                  <TableHead className="text-center">Oggetti</TableHead>
-                  <TableHead className="text-right w-32">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {boxes.map((box) => (
-                  <TableRow key={box.id} data-testid={`box-row-${box.box_number}`}>
-                    <TableCell className="font-mono font-bold">{box.box_number}</TableCell>
-                    <TableCell>
-                      <Link to={`/boxes/${box.id}`} className="font-medium hover:underline text-primary">
-                        {box.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {getCategoryName(box.category_id) && (
-                        <span 
-                          className="px-2 py-1 rounded-full text-xs font-medium"
-                          style={{ 
-                            backgroundColor: `${getCategoryColor(box.category_id)}20`,
-                            color: getCategoryColor(box.category_id)
-                          }}
-                        >
-                          {getCategoryName(box.category_id)}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">{box.location || "-"}</TableCell>
-                    <TableCell className="text-center">{box.items?.length || 0}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={(e) => openQRDialog(box, e)}>
-                          <QrCode size={16} />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={(e) => openEditDialog(box, e)}>
-                          <Edit2 size={16} />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 size={16} className="text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Eliminare il contenitore?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Questa azione è irreversibile. Tutti gli oggetti nel contenitore verranno eliminati.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDelete(box.id)}
-                                className="rounded-full bg-destructive"
-                              >
-                                Elimina
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       ) : (
-        // Vista griglia per <= 10 contenitori
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
           {boxes.map((box, index) => (
             <Card 
               key={box.id} 
-              className={`card-hover border-border/50 bg-card/50 backdrop-blur-sm group stagger-${(index % 5) + 1} opacity-0 animate-slide-in-up`}
+              className={`border-border/50 bg-card/50 backdrop-blur-sm stagger-${(index % 5) + 1} opacity-0 animate-slide-in-up`}
               data-testid={`box-card-${box.box_number}`}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  {/* Left: Box number badge */}
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <span className="font-mono font-bold text-primary text-lg">#{box.box_number}</span>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  
+                  {/* Center: Box info - matching fig2 layout */}
+                  <div className="flex-1 min-w-0">
+                    {/* Line 1: contenitore+categoria (blue) */}
+                    <h3 className="text-lg font-semibold text-primary truncate">
+                      {box.name}
+                      {getCategoryName(box.category_id) && (
+                        <span className="text-muted-foreground font-normal"> • {getCategoryName(box.category_id)}</span>
+                      )}
+                    </h3>
+                    
+                    {/* Line 2: posizione + data ultima modifica */}
+                    <div className="flex flex-wrap items-center gap-4 mt-1 text-sm text-muted-foreground">
+                      {box.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin size={14} className="text-red-500" />
+                          <span>{box.location}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        <span>{formatDate(box.updated_at || box.created_at)}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Line 3: Totale oggetti */}
+                    <div className="flex items-center gap-1 mt-1 text-sm">
+                      <span className="text-muted-foreground">Totale oggetti:</span>
+                      <span className="font-semibold">{box.items?.length || 0}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Right: Action icons */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={(e) => openQRDialog(box, e)}
                       data-testid={`qr-box-${box.box_number}`}
+                      title="QR Code"
                     >
-                      <QrCode size={16} />
+                      <QrCode size={18} />
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       onClick={(e) => openEditDialog(box, e)}
                       data-testid={`edit-box-${box.box_number}`}
+                      title="Modifica"
                     >
-                      <Edit2 size={16} />
+                      <Edit2 size={18} />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" data-testid={`delete-box-${box.box_number}`}>
-                          <Trash2 size={16} className="text-destructive" />
+                        <Button variant="ghost" size="icon" data-testid={`delete-box-${box.box_number}`} title="Elimina">
+                          <Trash2 size={18} className="text-destructive" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -452,7 +410,6 @@ export const BoxList = () => {
                           <AlertDialogAction 
                             onClick={() => handleDelete(box.id)}
                             className="rounded-full bg-destructive"
-                            data-testid={`confirm-delete-${box.box_number}`}
                           >
                             Elimina
                           </AlertDialogAction>
@@ -461,35 +418,17 @@ export const BoxList = () => {
                     </AlertDialog>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{box.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                  <Package size={14} />
-                  <span>{box.items?.length || 0} oggetti</span>
-                </div>
-                {box.location && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                    <MapPin size={14} />
-                    <span>{box.location}</span>
-                  </div>
-                )}
-                {getCategoryName(box.category_id) && (
-                  <div 
-                    className="inline-flex px-3 py-1 rounded-full text-xs font-medium mb-4"
-                    style={{ 
-                      backgroundColor: `${getCategoryColor(box.category_id)}20`,
-                      color: getCategoryColor(box.category_id)
-                    }}
+                
+                {/* Footer: View content link */}
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <Link 
+                    to={`/boxes/${box.id}`} 
+                    className="flex items-center justify-between text-sm font-medium text-primary hover:underline"
                   >
-                    {getCategoryName(box.category_id)}
-                  </div>
-                )}
-                <Link 
-                  to={`/boxes/${box.id}`} 
-                  className="flex items-center justify-between pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
-                >
-                  Visualizza contenuto
-                  <ArrowRight size={16} />
-                </Link>
+                    Visualizza contenuto
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           ))}
