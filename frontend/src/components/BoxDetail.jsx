@@ -421,7 +421,7 @@ export const BoxDetail = () => {
               
               {/* Line 3: Totale oggetti */}
               <div className="flex items-center gap-1 mt-1 text-sm">
-                <span className="text-muted-foreground">Totale oggetti:</span>
+                <span className="text-muted-foreground">{t('totalItems')}:</span>
                 <span className="font-semibold">{box.items?.length || 0}</span>
               </div>
             </div>
@@ -430,61 +430,61 @@ export const BoxDetail = () => {
             <div className="flex items-center gap-1 flex-shrink-0">
               <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" data-testid="show-qr-btn" title="QR Code">
+                  <Button variant="ghost" size="icon" data-testid="show-qr-btn" title={t('qrCodeTitle')}>
                     <QrCode size={18} />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-sm text-center">
                   <DialogHeader>
-                    <DialogTitle>QR Code #{box.box_number}</DialogTitle>
+                    <DialogTitle>{t('qrCodeTitle')} #{box.box_number}</DialogTitle>
                   </DialogHeader>
                   <div className="flex flex-col items-center gap-4 py-4">
                     <div className="p-4 bg-white rounded-2xl">
-                      <QRCodeSVG id="qr-code-detail" value={`Contenitore #${box.box_number}`} size={200} level="H" />
+                      <QRCodeSVG id="qr-code-detail" value={`${t('containerSection')} #${box.box_number}`} size={200} level="H" />
                     </div>
                     <p className="text-3xl font-mono font-bold">#{box.box_number}</p>
                     <p className="text-muted-foreground">{box.name}</p>
-                    <Button onClick={printQRCode} className="rounded-full w-full">Stampa QR Code</Button>
+                    <Button onClick={printQRCode} className="rounded-full w-full">{t('printQR')}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
               
               <Dialog open={isEditBoxDialogOpen} onOpenChange={handleBoxDialogChange}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" data-testid="edit-box-details-btn" title="Modifica">
+                  <Button variant="ghost" size="icon" data-testid="edit-box-details-btn" title={t('edit')}>
                     <Edit2 size={18} />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
                   <DialogHeader>
-                    <DialogTitle>Modifica Contenitore</DialogTitle>
+                    <DialogTitle>{t('editContainer')}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleEditBox} className="space-y-4">
                     <div>
-                      <Label htmlFor="box_number">Numero</Label>
+                      <Label htmlFor="box_number">#</Label>
                       <Input id="box_number" type="number" value={boxForm.box_number} onChange={(e) => setBoxForm({ ...boxForm, box_number: parseInt(e.target.value) })} required min="1" className="mt-1" />
                     </div>
                     <div>
-                      <Label htmlFor="edit_name">Nome</Label>
+                      <Label htmlFor="edit_name">{t('containerName')}</Label>
                       <Input id="edit_name" value={boxForm.name} onChange={(e) => setBoxForm({ ...boxForm, name: e.target.value })} required className="mt-1" />
                     </div>
                     <div>
-                      <Label htmlFor="edit_category">Categoria</Label>
+                      <Label htmlFor="edit_category">{t('containerCategory')}</Label>
                       <Select value={boxForm.category_id} onValueChange={(val) => setBoxForm({ ...boxForm, category_id: val === "none" ? "" : val })}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="Seleziona categoria" /></SelectTrigger>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder={t('selectCategory')} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Nessuna categoria</SelectItem>
+                          <SelectItem value="none">{t('noCategory')}</SelectItem>
                           {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="edit_location">Posizione</Label>
+                      <Label htmlFor="edit_location">{t('containerLocation')}</Label>
                       <Input id="edit_location" value={boxForm.location} onChange={(e) => setBoxForm({ ...boxForm, location: e.target.value })} className="mt-1" />
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
-                      <Button type="button" variant="outline" onClick={() => handleBoxDialogChange(false)} className="rounded-full">Annulla</Button>
-                      <Button type="submit" className="rounded-full" data-testid="save-box-details-btn"><Save size={16} className="mr-2" />Salva</Button>
+                      <Button type="button" variant="outline" onClick={() => handleBoxDialogChange(false)} className="rounded-full">{t('cancel')}</Button>
+                      <Button type="submit" className="rounded-full" data-testid="save-box-details-btn"><Save size={16} className="mr-2" />{t('save')}</Button>
                     </div>
                   </form>
                 </DialogContent>
@@ -492,18 +492,18 @@ export const BoxDetail = () => {
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Elimina">
+                  <Button variant="ghost" size="icon" title={t('delete')}>
                     <Trash2 size={18} className="text-destructive" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Eliminare il contenitore?</AlertDialogTitle>
-                    <AlertDialogDescription>Tutti gli oggetti verranno eliminati permanentemente.</AlertDialogDescription>
+                    <AlertDialogTitle>{t('deleteContainer')}</AlertDialogTitle>
+                    <AlertDialogDescription>{t('deleteContainerWarning')}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { axios.delete(`${API}/boxes/${id}`).then(() => { toast.success("Eliminato"); navigate("/boxes"); }); }} className="rounded-full bg-destructive">Elimina</AlertDialogAction>
+                    <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => { axios.delete(`${API}/boxes/${id}`).then(() => { toast.success(t('success')); navigate("/boxes"); }); }} className="rounded-full bg-destructive">{t('delete')}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -515,16 +515,16 @@ export const BoxDetail = () => {
       {/* Section: Lista Oggetti - matching fig3 */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold">Lista Oggetti</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t('itemsSection')}</CardTitle>
         </CardHeader>
         <CardContent>
           {box.items?.length === 0 ? (
             <div className="text-center py-8">
               <Package className="mx-auto text-muted-foreground/50 mb-4" size={48} />
-              <h3 className="font-semibold mb-2">Contenitore vuoto</h3>
-              <p className="text-sm text-muted-foreground mb-4">Aggiungi il primo oggetto</p>
+              <h3 className="font-semibold mb-2">{t('emptyContainer')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{t('addFirstItem')}</p>
               <Button className="rounded-full" onClick={openNewItemDialog}>
-                <Plus size={18} className="mr-2" /> Aggiungi Oggetto
+                <Plus size={18} className="mr-2" /> {t('addItem')}
               </Button>
             </div>
           ) : (
