@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
+import { useLanguage } from "@/i18n";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { it, enGB } from "date-fns/locale";
 import { Package, Plus, Trash2, Edit2, MapPin, ArrowRight, QrCode, Calendar } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const BoxList = () => {
+  const { t, language } = useLanguage();
   const [boxes, setBoxes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [locations, setLocations] = useState([]);
