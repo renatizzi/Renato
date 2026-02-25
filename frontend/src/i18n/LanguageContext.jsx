@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import translations from './translations';
+import { translateCategory, isDefaultCategory } from './translations';
 
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    // Get saved language or default to Italian
     const saved = localStorage.getItem('boxmanager_language');
     return saved || 'it';
   });
@@ -13,6 +13,36 @@ export const LanguageProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('boxmanager_language', language);
   }, [language]);
+
+  // Auto-translate default categories when language changes
+  const translateCategories = useCallback(async (newLang) => {
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/categories`);
+      if (!response.ok) return;
+      const cats = await response.json();
+
+      for (const cat of cats) {
+        if (isDefaultCategory(cat.name)) {
+          const translated = translateCategory(cat.name, newLang);
+          if (translated !== cat.name) {
+            await fetch(`${backendUrl}/api/categories/${cat.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: translated, color: cat.color })
+            });
+          }
+        }
+      }
+    } catch (err) {
+      // Silent fail - non-critical operation
+    }
+  }, []);
+
+  const handleSetLanguage = useCallback((newLang) => {
+    setLanguage(newLang);
+    translateCategories(newLang);
+  }, [translateCategories]);
 
   // Get translation
   const t = (key) => {
