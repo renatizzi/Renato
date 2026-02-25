@@ -165,7 +165,8 @@ export const BoxList = () => {
 
   const handleDialogChange = (open) => {
     if (!open && formData.name && formData.name !== editingBox?.name) {
-      if (!window.confirm("Sei sicuro di voler chiudere? I dati inseriti andranno persi.")) {
+      const confirmMsg = language === 'en' ? "Close? Data will be lost." : "Sei sicuro di voler chiudere? I dati inseriti andranno persi.";
+      if (!window.confirm(confirmMsg)) {
         return;
       }
     }
