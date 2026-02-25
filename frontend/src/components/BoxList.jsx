@@ -370,7 +370,7 @@ export const BoxList = () => {
                     
                     {/* Line 3: Totale oggetti */}
                     <div className="flex items-center gap-1 mt-1 text-sm">
-                      <span className="text-muted-foreground">Totale oggetti:</span>
+                      <span className="text-muted-foreground">{t('totalItems')}:</span>
                       <span className="font-semibold">{box.items?.length || 0}</span>
                     </div>
                   </div>
@@ -382,7 +382,7 @@ export const BoxList = () => {
                       size="icon" 
                       onClick={(e) => openQRDialog(box, e)}
                       data-testid={`qr-box-${box.box_number}`}
-                      title="QR Code"
+                      title={t('qrCodeTitle')}
                     >
                       <QrCode size={18} />
                     </Button>
@@ -391,30 +391,28 @@ export const BoxList = () => {
                       size="icon" 
                       onClick={(e) => openEditDialog(box, e)}
                       data-testid={`edit-box-${box.box_number}`}
-                      title="Modifica"
+                      title={t('edit')}
                     >
                       <Edit2 size={18} />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" data-testid={`delete-box-${box.box_number}`} title="Elimina">
+                        <Button variant="ghost" size="icon" data-testid={`delete-box-${box.box_number}`} title={t('delete')}>
                           <Trash2 size={18} className="text-destructive" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Eliminare il contenitore?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Questa azione è irreversibile. Tutti gli oggetti nel contenitore verranno eliminati.
-                          </AlertDialogDescription>
+                          <AlertDialogTitle>{t('deleteContainer')}</AlertDialogTitle>
+                          <AlertDialogDescription>{t('deleteContainerWarning')}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
+                          <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => handleDelete(box.id)}
                             className="rounded-full bg-destructive"
                           >
-                            Elimina
+                            {t('delete')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -428,7 +426,7 @@ export const BoxList = () => {
                     to={`/boxes/${box.id}`} 
                     className="flex items-center justify-between text-sm font-medium text-primary hover:underline"
                   >
-                    Visualizza contenuto
+                    {t('viewContent')}
                     <ArrowRight size={16} />
                   </Link>
                 </div>
