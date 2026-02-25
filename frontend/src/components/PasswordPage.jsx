@@ -120,8 +120,8 @@ export const PasswordPage = ({ onLogout }) => {
     <div className="space-y-8 animate-slide-in-up max-w-2xl" data-testid="password-page">
       {/* Header */}
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Password</h1>
-        <p className="text-muted-foreground mt-1">Gestisce la password di accesso con possibilità di ripristino di quella originale</p>
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Impostazione utente e password</h1>
+        <p className="text-sm text-muted-foreground mt-1">Consente di inserire il nome dell'utente e di gestire la password di accesso con possibilità di ripristino di quella originale</p>
       </div>
 
       {/* User Settings */}
