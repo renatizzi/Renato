@@ -113,24 +113,134 @@ export const PrintPage = () => {
   const selectAll = () => setSelectedBoxes(filteredBoxes.map(b => b.id));
   const deselectAll = () => setSelectedBoxes([]);
 
-  const handlePrint = () => window.print();
+  // Helper: save file with Save As dialog when available
+  const saveFile = async (blob, suggestedName, fileType) => {
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName,
+          types: [fileType],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return true;
+      } catch (err) {
+        if (err.name === 'AbortError') return false;
+      }
+    }
+    // Fallback: standard download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = suggestedName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 1000);
+    return true;
+  };
+
+  const handlePrint = () => {
+    const printData = boxesToPrint;
+    const dateStr = format(new Date(), "dd/MM/yyyy HH:mm");
+    const totalItemsCount = printData.reduce((acc, box) => acc + (box.items?.length || 0), 0);
+
+    // Build print-ready HTML content
+    let itemsHtml = '';
+    printData.forEach(box => {
+      const catName = getCategoryName(box.category_id);
+      let boxItems = '';
+      if (box.items?.length > 0) {
+        box.items.forEach(item => {
+          const imgTag = item.image_data
+            ? `<img src="${item.image_data}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" />`
+            : `<div style="width:48px;height:48px;background:#eee;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;">-</div>`;
+          boxItems += `
+            <tr>
+              <td style="padding:6px;border-bottom:1px solid #eee;vertical-align:top;">${imgTag}</td>
+              <td style="padding:6px;border-bottom:1px solid #eee;">
+                <strong>${item.name}</strong>
+                ${item.description ? `<br/><span style="color:#666;font-size:12px;">${item.description}</span>` : ''}
+              </td>
+              <td style="padding:6px;border-bottom:1px solid #eee;color:#666;font-size:12px;">${formatDate(item.created_at)}</td>
+            </tr>`;
+        });
+      } else {
+        boxItems = `<tr><td colspan="3" style="padding:10px;color:#999;font-style:italic;">${t('emptyContainer')}</td></tr>`;
+      }
+
+      itemsHtml += `
+        <div style="margin-bottom:20px;page-break-inside:avoid;border:1px solid #ddd;border-radius:8px;overflow:hidden;">
+          <div style="background:#f7f7f7;padding:10px 14px;border-bottom:1px solid #ddd;">
+            <strong style="font-size:15px;">#${box.box_number} - ${box.name}</strong>
+            <div style="font-size:12px;color:#666;margin-top:4px;">
+              ${language === 'en' ? 'Category' : 'Categoria'}: ${catName}
+              ${box.location ? ` | ${language === 'en' ? 'Location' : 'Posizione'}: ${box.location}` : ''}
+              | ${language === 'en' ? 'Items' : 'Oggetti'}: ${box.items?.length || 0}
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            ${boxItems}
+          </table>
+        </div>`;
+    });
+
+    const printHtml = `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8" />
+<title>Box Manager - ${language === 'en' ? 'Print' : 'Stampa'}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px; color: #333; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 16px; }
+  @media print { body { margin: 10px; } }
+</style>
+</head><body>
+<h1>Box Manager - ${language === 'en' ? 'Archive Export' : 'Esportazione Archivio'}</h1>
+<p class="subtitle">${language === 'en' ? 'Printed on' : 'Stampato il'} ${dateStr} | ${printData.length} ${t('containers')}, ${totalItemsCount} ${t('items')}</p>
+${itemsHtml}
+</body></html>`;
+
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (printWin) {
+      printWin.document.write(printHtml);
+      printWin.document.close();
+      // Wait for images to load before printing
+      printWin.onload = () => {
+        printWin.focus();
+        printWin.print();
+      };
+      // Fallback if onload doesn't fire
+      setTimeout(() => {
+        printWin.focus();
+        printWin.print();
+      }, 1500);
+    } else {
+      toast.error(language === 'en' ? 'Pop-up blocked. Please allow pop-ups for this site.' : 'Pop-up bloccato. Consenti i pop-up per questo sito.');
+    }
+  };
 
   const handleExportCSV = async () => {
     try {
       const boxIds = selectedBoxes.length > 0 ? selectedBoxes : filteredBoxes.map(b => b.id);
       const params = { box_ids: boxIds.join(",") };
       const response = await axios.get(`${API}/export/csv`, { params, responseType: 'blob' });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `boxmanager_export_${format(new Date(), 'yyyyMMdd')}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      toast.success(t('success'));
+
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const suggestedName = `boxmanager_export_${format(new Date(), 'yyyyMMdd')}.csv`;
+
+      const saved = await saveFile(blob, suggestedName, {
+        description: 'CSV File',
+        accept: { 'text/csv': ['.csv'] },
+      });
+
+      if (saved) {
+        toast.success(language === 'en' ? 'CSV exported successfully' : 'CSV esportato con successo');
+      }
     } catch (error) {
       toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
