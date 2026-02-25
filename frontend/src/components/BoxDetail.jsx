@@ -181,6 +181,7 @@ const CameraCapture = ({ onCapture, onClose, t }) => {
 export const BoxDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [box, setBox] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -201,7 +202,8 @@ export const BoxDetail = () => {
         axios.get(`${API}/categories`)
       ]);
       setBox(boxRes.data);
-      setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'it')));
+      const locale = language === 'en' ? 'en' : 'it';
+      setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, locale)));
       setBoxForm({
         name: boxRes.data.name,
         category_id: boxRes.data.category_id || "",
@@ -209,7 +211,7 @@ export const BoxDetail = () => {
         box_number: boxRes.data.box_number
       });
     } catch (error) {
-      toast.error("Contenitore non trovato");
+      toast.error(t('error'));
       navigate("/boxes");
     } finally {
       setLoading(false);
@@ -222,27 +224,27 @@ export const BoxDetail = () => {
       const payload = { name: itemForm.name, description: itemForm.description, image_data: itemForm.image_data || "" };
       if (editingItem) {
         await axios.put(`${API}/boxes/${id}/items/${editingItem.id}`, payload);
-        toast.success("Oggetto modificato");
+        toast.success(t('success'));
       } else {
         await axios.post(`${API}/boxes/${id}/items`, payload);
-        toast.success("Oggetto aggiunto");
+        toast.success(t('success'));
       }
       setIsItemDialogOpen(false);
       setEditingItem(null);
       setItemForm({ name: "", description: "", image_data: "" });
       fetchData();
     } catch (error) {
-      toast.error("Errore nel salvare l'oggetto");
+      toast.error(t('error'));
     }
   };
 
   const handleDeleteItem = async (itemId) => {
     try {
       await axios.delete(`${API}/boxes/${id}/items/${itemId}`);
-      toast.success("Oggetto eliminato");
+      toast.success(t('success'));
       fetchData();
     } catch (error) {
-      toast.error("Errore nell'eliminazione");
+      toast.error(t('error'));
     }
   };
 
