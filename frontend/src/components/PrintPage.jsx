@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/App";
+import { useLanguage } from "@/i18n";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { it, enGB } from "date-fns/locale";
 import { Printer, FileSpreadsheet, CheckSquare, Square, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const PrintPage = () => {
+  const { t, language } = useLanguage();
   const [boxes, setBoxes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedBoxes, setSelectedBoxes] = useState([]);
@@ -30,7 +32,7 @@ export const PrintPage = () => {
       setBoxes(boxesRes.data);
       setCategories(categoriesRes.data);
     } catch (error) {
-      toast.error("Errore nel caricamento dati");
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -42,59 +44,45 @@ export const PrintPage = () => {
   };
 
   const toggleBox = (boxId) => {
-    setSelectedBoxes(prev => 
-      prev.includes(boxId) 
-        ? prev.filter(id => id !== boxId)
-        : [...prev, boxId]
-    );
+    setSelectedBoxes(prev => prev.includes(boxId) ? prev.filter(id => id !== boxId) : [...prev, boxId]);
   };
 
-  const selectAll = () => {
-    setSelectedBoxes(boxes.map(b => b.id));
-  };
+  const selectAll = () => setSelectedBoxes(boxes.map(b => b.id));
+  const deselectAll = () => setSelectedBoxes([]);
 
-  const deselectAll = () => {
-    setSelectedBoxes([]);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const handleExportCSV = async () => {
     try {
       const params = selectedBoxes.length > 0 ? { box_ids: selectedBoxes.join(",") } : {};
-      const response = await axios.get(`${API}/export/csv`, {
-        params,
-        responseType: 'blob'
-      });
+      const response = await axios.get(`${API}/export/csv`, { params, responseType: 'blob' });
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'archivio_oggetti.csv');
+      link.setAttribute('download', 'boxmanager_export.csv');
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      toast.success("File CSV scaricato");
+      toast.success(t('success'));
     } catch (error) {
-      toast.error("Errore nell'esportazione");
+      toast.error(t('error'));
     }
   };
 
   const formatDate = (dateStr) => {
     try {
-      return format(new Date(dateStr), "dd/MM/yyyy HH:mm", { locale: it });
+      const locale = language === 'en' ? enGB : it;
+      return format(new Date(dateStr), "dd/MM/yyyy HH:mm", { locale });
     } catch {
       return dateStr;
     }
   };
 
-  const boxesToPrint = selectedBoxes.length > 0 
-    ? boxes.filter(b => selectedBoxes.includes(b.id))
-    : boxes;
+  const boxesToPrint = selectedBoxes.length > 0 ? boxes.filter(b => selectedBoxes.includes(b.id)) : boxes;
+  const totalItems = boxesToPrint.reduce((acc, box) => acc + (box.items?.length || 0), 0);
 
   if (loading) {
     return (
@@ -105,30 +93,21 @@ export const PrintPage = () => {
   }
 
   return (
-    <div className="space-y-8 animate-slide-in-up" data-testid="print-page">
+    <div className="space-y-6 animate-slide-in-up" data-testid="print-page">
       {/* Header - no-print */}
       <div className="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Esporta & Stampa</h1>
-          <p className="text-muted-foreground mt-1">Esporta l'archivio in un file CSV per l'elaborazione immediata con altre applicazioni e Stampa liste complete o parziali dell'archivio</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('printTitle')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('printDesc')}</p>
         </div>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            className="rounded-full gap-2"
-            onClick={handleExportCSV}
-            data-testid="export-csv-btn"
-          >
+          <Button variant="outline" className="rounded-full gap-2" onClick={handleExportCSV} data-testid="export-csv-btn">
             <FileSpreadsheet size={18} />
-            Esporta CSV
+            {t('exportCSV')}
           </Button>
-          <Button 
-            className="rounded-full gap-2 btn-bounce"
-            onClick={handlePrint}
-            data-testid="print-btn"
-          >
+          <Button className="rounded-full gap-2 btn-bounce" onClick={handlePrint} data-testid="print-btn">
             <Printer size={18} />
-            Stampa
+            {t('print')}
           </Button>
         </div>
       </div>
@@ -138,58 +117,37 @@ export const PrintPage = () => {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-full gap-2"
-                onClick={selectAll}
-                data-testid="select-all-btn"
-              >
+              <Button variant="outline" size="sm" className="rounded-full gap-2" onClick={selectAll} data-testid="select-all-btn">
                 <CheckSquare size={16} />
-                Seleziona Tutti
+                {t('selectAll')}
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-full gap-2"
-                onClick={deselectAll}
-                data-testid="deselect-all-btn"
-              >
+              <Button variant="outline" size="sm" className="rounded-full gap-2" onClick={deselectAll} data-testid="deselect-all-btn">
                 <Square size={16} />
-                Deseleziona
+                {t('deselectAll')}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
               {selectedBoxes.length === 0 
-                ? `Stamperai tutti i ${boxes.length} contenitori`
-                : `${selectedBoxes.length} contenitori selezionati`
+                ? `${boxes.length} ${t('containers')}, ${totalItems} ${t('items')}`
+                : `${selectedBoxes.length} ${t('containers')} ${t('selected')}, ${totalItems} ${t('items')}`
               }
             </p>
           </div>
           <Separator className="my-4" />
-          {/* Vista compatta per selezione */}
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
                 <TableHead className="w-16">#</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead className="text-center">Oggetti</TableHead>
+                <TableHead>{t('containerName')}</TableHead>
+                <TableHead className="text-center">{t('items')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {boxes.map(box => (
-                <TableRow 
-                  key={box.id}
-                  className="cursor-pointer"
-                  onClick={() => toggleBox(box.id)}
-                  data-testid={`select-box-${box.box_number}`}
-                >
+                <TableRow key={box.id} className="cursor-pointer" onClick={() => toggleBox(box.id)} data-testid={`select-box-${box.box_number}`}>
                   <TableCell>
-                    <Checkbox 
-                      checked={selectedBoxes.includes(box.id)}
-                      onCheckedChange={() => toggleBox(box.id)}
-                    />
+                    <Checkbox checked={selectedBoxes.includes(box.id)} onCheckedChange={() => toggleBox(box.id)} />
                   </TableCell>
                   <TableCell className="font-mono font-bold">{box.box_number}</TableCell>
                   <TableCell className="font-medium">{box.name}</TableCell>
@@ -203,8 +161,8 @@ export const PrintPage = () => {
 
       {/* Print Preview */}
       <div className="print-only">
-        <h1 className="text-2xl font-bold mb-2">Archivio Oggetti Personali</h1>
-        <p className="text-sm text-gray-500 mb-6">Stampato il {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+        <h1 className="text-2xl font-bold mb-2">Box Manager - {language === 'en' ? 'Archive Export' : 'Esportazione Archivio'}</h1>
+        <p className="text-sm text-gray-500 mb-6">{language === 'en' ? 'Printed on' : 'Stampato il'} {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
       </div>
 
       {/* Boxes List for Print */}
@@ -219,21 +177,21 @@ export const PrintPage = () => {
                 <span>{box.name}</span>
               </CardTitle>
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span>Categoria: {getCategoryName(box.category_id)}</span>
-                {box.location && <span>Posizione: {box.location}</span>}
-                <span>Creato: {formatDate(box.created_at)}</span>
+                <span>{t('containerCategory')}: {getCategoryName(box.category_id)}</span>
+                {box.location && <span>{t('containerLocation')}: {box.location}</span>}
+                <span>{language === 'en' ? 'Created' : 'Creato'}: {formatDate(box.created_at)}</span>
               </div>
             </CardHeader>
             <CardContent>
               {box.items?.length === 0 ? (
-                <p className="text-muted-foreground italic">Contenitore vuoto</p>
+                <p className="text-muted-foreground italic">{t('emptyContainer')}</p>
               ) : (
                 <table className="w-full print-table">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2 font-medium">Oggetto</th>
-                      <th className="text-left py-2 font-medium">Descrizione</th>
-                      <th className="text-left py-2 font-medium print:hidden md:table-cell">Data Inserimento</th>
+                      <th className="text-left py-2 font-medium">{t('itemName')}</th>
+                      <th className="text-left py-2 font-medium">{t('itemDescription')}</th>
+                      <th className="text-left py-2 font-medium print:hidden md:table-cell">{language === 'en' ? 'Date Added' : 'Data Inserimento'}</th>
                     </tr>
                   </thead>
                   <tbody>
