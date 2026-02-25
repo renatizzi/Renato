@@ -130,7 +130,8 @@ export const BoxList = () => {
 
   const formatDate = (dateStr) => {
     try {
-      return format(new Date(dateStr), "d MMM yyyy", { locale: it });
+      const locale = language === 'en' ? enGB : it;
+      return format(new Date(dateStr), "d MMM yyyy", { locale });
     } catch {
       return "-";
     }
