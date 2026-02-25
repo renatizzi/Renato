@@ -76,27 +76,27 @@ export const BoxList = () => {
     try {
       if (editingBox) {
         await axios.put(`${API}/boxes/${editingBox.id}`, formData);
-        toast.success("Contenitore modificato");
+        toast.success(t('success'));
       } else {
         await axios.post(`${API}/boxes`, formData);
-        toast.success("Contenitore creato");
+        toast.success(t('success'));
       }
       setIsDialogOpen(false);
       setEditingBox(null);
       setFormData({ name: "", category_id: "", location: "" });
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Errore");
+      toast.error(error.response?.data?.detail || t('error'));
     }
   };
 
   const handleDelete = async (boxId) => {
     try {
       await axios.delete(`${API}/boxes/${boxId}`);
-      toast.success("Contenitore eliminato");
+      toast.success(t('success'));
       fetchData();
     } catch (error) {
-      toast.error("Errore nell'eliminazione");
+      toast.error(t('error'));
     }
   };
 
