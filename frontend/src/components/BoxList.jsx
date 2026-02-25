@@ -322,11 +322,11 @@ export const BoxList = () => {
       {boxes.length === 0 ? (
         <div className="empty-state py-16">
           <Package className="text-muted-foreground/50 mb-4" size={64} />
-          <h3 className="text-xl font-semibold mb-2">Nessun contenitore</h3>
-          <p className="text-muted-foreground mb-4">Crea il tuo primo contenitore per iniziare</p>
+          <h3 className="text-xl font-semibold mb-2">{t('noContainers')}</h3>
+          <p className="text-muted-foreground mb-4">{t('createFirstContainer')}</p>
           <Button className="rounded-full" onClick={openNewDialog}>
             <Plus size={18} className="mr-2" />
-            Nuovo Contenitore
+            {t('newContainer')}
           </Button>
         </div>
       ) : (
