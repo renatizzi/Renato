@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import { Package, Search, Folders, Printer, Home, Menu, Lock, LogOut, MoreHorizontal } from "lucide-react";
+import { Package, Search, Folders, Home, Menu, Lock, LogOut, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,19 @@ import { BackupPage } from "@/components/BackupPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
+
+// App name constant
+export const APP_NAME = "Box Manager";
+
+// Format date helper
+const formatSystemDate = () => {
+  const date = new Date();
+  return date.toLocaleDateString('it-IT', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric' 
+  });
+};
 
 // Login Component
 const LoginPage = ({ onLogin }) => {
@@ -40,7 +53,6 @@ const LoginPage = ({ onLogin }) => {
       const isRequired = response.data.password_enabled !== false;
       setPasswordRequired(isRequired);
       
-      // If password is not required, auto-login
       if (!isRequired) {
         localStorage.setItem("archivio_auth", "true");
         onLogin();
@@ -48,7 +60,6 @@ const LoginPage = ({ onLogin }) => {
       }
     } catch (err) {
       console.error("Auth check error:", err);
-      // Default to requiring password on error
       setPasswordRequired(true);
     } finally {
       setCheckingAuth(false);
@@ -87,7 +98,7 @@ const LoginPage = ({ onLogin }) => {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Lock className="text-primary" size={32} />
           </div>
-          <CardTitle className="text-2xl font-extrabold">Archivio Personale</CardTitle>
+          <CardTitle className="text-2xl font-extrabold">{APP_NAME}</CardTitle>
           <p className="text-muted-foreground">Inserisci la password per accedere</p>
         </CardHeader>
         <CardContent>
@@ -123,7 +134,51 @@ const LoginPage = ({ onLogin }) => {
   );
 };
 
-// Navigation Component - Menu uguale alla homepage
+// Global Header Component
+const GlobalHeader = ({ username, onLogout }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+
+  return (
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border no-print">
+      <div className="flex items-center justify-between px-4 py-3 md:px-6">
+        {/* Left side - App name + username */}
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-lg md:text-xl font-extrabold text-primary tracking-tight">
+              {APP_NAME}
+            </h1>
+            {username && (
+              <p className="text-sm text-muted-foreground">{username}</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Right side - Date + Home icon */}
+        <div className="flex items-center gap-4">
+          <span className="hidden sm:block text-sm text-muted-foreground">
+            {formatSystemDate()}
+          </span>
+          {!isHome && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate("/")}
+              className="rounded-full"
+              data-testid="home-btn"
+              title="Home"
+            >
+              <Home size={20} />
+            </Button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
+
+// Navigation Component - Sidebar menu
 const Navigation = ({ onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -138,7 +193,7 @@ const Navigation = ({ onLogout }) => {
   const otherFunctionsItems = [
     { to: "/print", label: "Esporta & Stampa" },
     { to: "/backup", label: "Backup & Ripristino" },
-    { to: "/password", label: "Password" },
+    { to: "/password", label: "Impostazione utente e password" },
   ];
 
   const [showOtherMenu, setShowOtherMenu] = useState(false);
@@ -219,55 +274,55 @@ const Navigation = ({ onLogout }) => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-card/50 backdrop-blur-sm border-r border-border p-6 no-print">
-        <NavLink to="/" className="mb-8 block">
-          <h1 className="text-xl font-extrabold text-primary tracking-tight hover:underline">Riepilogo</h1>
-          <p className="text-sm text-muted-foreground">Oggetti Personali</p>
-        </NavLink>
+      <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-card/50 backdrop-blur-sm border-r border-border p-6 pt-4 no-print">
         <NavContent />
       </aside>
 
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border no-print">
-        <div className="flex items-center justify-between px-4 py-3">
-          <NavLink to="/" className="text-lg font-extrabold text-primary hover:underline">Riepilogo</NavLink>
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" data-testid="mobile-menu-btn">
-                <Menu size={24} />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-6">
-              <NavLink to="/" onClick={() => setIsOpen(false)} className="mb-8 block">
-                <h1 className="text-xl font-extrabold text-primary tracking-tight hover:underline">Riepilogo</h1>
-                <p className="text-sm text-muted-foreground">Oggetti Personali</p>
-              </NavLink>
-              <NavContent />
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed bottom-4 right-4 z-50 no-print">
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button 
+              size="icon" 
+              className="h-14 w-14 rounded-full shadow-lg"
+              data-testid="mobile-menu-btn"
+            >
+              <Menu size={24} />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-extrabold text-primary">{APP_NAME}</h2>
+              <p className="text-sm text-muted-foreground">Menu</p>
+            </div>
+            <NavContent />
+          </SheetContent>
+        </Sheet>
+      </div>
     </>
   );
 };
 
-function AppContent({ onLogout }) {
+function AppContent({ onLogout, username }) {
   return (
-    <div className="flex min-h-screen">
-      <Navigation onLogout={onLogout} />
-      <main className="flex-1 lg:p-8 p-4 pt-20 lg:pt-8">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/boxes" element={<BoxList />} />
-          <Route path="/boxes/:id" element={<BoxDetail />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/print" element={<PrintPage />} />
-          <Route path="/password" element={<PasswordPage onLogout={onLogout} />} />
-          <Route path="/backup" element={<BackupPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
+    <div className="min-h-screen flex flex-col">
+      <GlobalHeader username={username} onLogout={onLogout} />
+      <div className="flex flex-1">
+        <Navigation onLogout={onLogout} />
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/boxes" element={<BoxList />} />
+            <Route path="/boxes/:id" element={<BoxDetail />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/print" element={<PrintPage />} />
+            <Route path="/password" element={<PasswordPage onLogout={onLogout} />} />
+            <Route path="/backup" element={<BackupPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
@@ -275,20 +330,37 @@ function AppContent({ onLogout }) {
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     const auth = localStorage.getItem("archivio_auth");
     setIsAuthenticated(auth === "true");
     setCheckingAuth(false);
+    
+    // Fetch username
+    if (auth === "true") {
+      fetchUsername();
+    }
   }, []);
+
+  const fetchUsername = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/settings`);
+      setUsername(response.data.username || "");
+    } catch (err) {
+      console.error("Error fetching username:", err);
+    }
+  };
 
   const handleLogin = () => {
     setIsAuthenticated(true);
+    fetchUsername();
   };
 
   const handleLogout = () => {
     localStorage.removeItem("archivio_auth");
     setIsAuthenticated(false);
+    setUsername("");
     toast.info("Disconnesso");
   };
 
@@ -305,7 +377,7 @@ function App() {
       <BrowserRouter>
         <Toaster position="top-right" richColors />
         {isAuthenticated ? (
-          <AppContent onLogout={handleLogout} />
+          <AppContent onLogout={handleLogout} username={username} />
         ) : (
           <LoginPage onLogin={handleLogin} />
         )}
