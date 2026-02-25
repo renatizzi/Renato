@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
+import { getErrorMessage } from "@/components/ErrorBoundary";
 import { toast } from "sonner";
 import { Search, Mic, MicOff, Package, ArrowRight, X, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,7 +86,7 @@ export const SearchPage = () => {
       const response = await axios.get(`${API}/search`, { params: { q: searchQuery.trim() } });
       setResults(response.data);
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language));
       setResults([]);
     } finally {
       setLoading(false);
