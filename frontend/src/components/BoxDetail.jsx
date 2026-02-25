@@ -212,7 +212,7 @@ export const BoxDetail = () => {
         box_number: boxRes.data.box_number
       });
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
       navigate("/boxes");
     } finally {
       setLoading(false);
@@ -235,7 +235,7 @@ export const BoxDetail = () => {
       setItemForm({ name: "", description: "", image_data: "" });
       fetchData();
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
   };
 
@@ -245,7 +245,7 @@ export const BoxDetail = () => {
       toast.success(t('success'));
       fetchData();
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language));
     }
   };
 
@@ -257,7 +257,7 @@ export const BoxDetail = () => {
       setIsEditBoxDialogOpen(false);
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
   };
 
