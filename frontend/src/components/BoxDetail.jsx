@@ -252,11 +252,11 @@ export const BoxDetail = () => {
     e.preventDefault();
     try {
       await axios.put(`${API}/boxes/${id}`, boxForm);
-      toast.success("Contenitore modificato");
+      toast.success(t('success'));
       setIsEditBoxDialogOpen(false);
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Errore nella modifica");
+      toast.error(error.response?.data?.detail || t('error'));
     }
   };
 
@@ -276,7 +276,10 @@ export const BoxDetail = () => {
   const getCategoryName = (categoryId) => categories.find(c => c.id === categoryId)?.name || null;
 
   const formatDate = (dateStr) => {
-    try { return format(new Date(dateStr), "d MMM yyyy", { locale: it }); }
+    try {
+      const locale = language === 'en' ? enGB : it;
+      return format(new Date(dateStr), "d MMM yyyy", { locale });
+    }
     catch { return "-"; }
   };
 
@@ -297,7 +300,8 @@ export const BoxDetail = () => {
 
   const handleItemDialogChange = (open) => {
     if (!open && itemForm.name && itemForm.name !== editingItem?.name) {
-      if (!window.confirm("Chiudere? I dati andranno persi.")) return;
+      const confirmMsg = language === 'en' ? "Close? Data will be lost." : "Chiudere? I dati andranno persi.";
+      if (!window.confirm(confirmMsg)) return;
     }
     setIsItemDialogOpen(open);
     if (!open) { setIsCameraOpen(false); setEditingItem(null); setItemForm({ name: "", description: "", image_data: "" }); }
@@ -305,7 +309,8 @@ export const BoxDetail = () => {
 
   const handleBoxDialogChange = (open) => {
     if (!open && boxForm.name !== box?.name) {
-      if (!window.confirm("Chiudere? I dati andranno persi.")) return;
+      const confirmMsg = language === 'en' ? "Close? Data will be lost." : "Chiudere? I dati andranno persi.";
+      if (!window.confirm(confirmMsg)) return;
     }
     setIsEditBoxDialogOpen(open);
   };
@@ -318,16 +323,14 @@ export const BoxDetail = () => {
       {/* Header - Page title matching fig3 */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Gestione Contenuto/Oggetti</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Crea e organizza gli oggetti dei singoli contenitori (nome oggetto, descrizione, eventuale foto)
-          </p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('contentTitle')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('contentDesc')}</p>
         </div>
         <Dialog open={isItemDialogOpen} onOpenChange={handleItemDialogChange}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewItemDialog} data-testid="add-item-btn">
               <Plus size={18} />
-              Aggiungi
+              {t('addItem')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
