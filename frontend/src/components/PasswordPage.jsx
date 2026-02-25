@@ -256,24 +256,24 @@ export const PasswordPage = ({ onLogout }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RotateCcw size={20} />
-            Reset Password
+            {t('resetPassword')}
           </CardTitle>
           <CardDescription>
-            Ripristina la password di default usando la master password.
+            {t('resetPasswordDesc')}
             <br />
-            <span className="text-xs text-muted-foreground">Master password: masterreset2025</span>
+            <span className="text-xs text-muted-foreground">{t('masterPasswordHint')}</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="master_password">Master Password</Label>
+              <Label htmlFor="master_password">{t('masterPassword')}</Label>
               <Input
                 id="master_password"
                 type="password"
                 value={masterPassword}
                 onChange={(e) => setMasterPassword(e.target.value)}
-                placeholder="Inserisci la master password"
+                placeholder={t('masterPasswordPlaceholder')}
                 className="mt-1"
                 data-testid="master-password-input"
               />
@@ -287,26 +287,26 @@ export const PasswordPage = ({ onLogout }) => {
                   data-testid="reset-password-btn"
                 >
                   <RotateCcw size={16} />
-                  Reset Password
+                  {t('resetPassword')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
                     <AlertTriangle className="text-destructive" size={20} />
-                    Conferma Reset Password
+                    {t('confirmReset')}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    La password verrà ripristinata a "archivio2025". Dovrai effettuare nuovamente l'accesso.
+                    {t('confirmResetDesc')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
+                  <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
                   <AlertDialogAction 
                     onClick={handleResetPassword}
                     className="rounded-full"
                   >
-                    Conferma Reset
+                    {t('confirm')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
