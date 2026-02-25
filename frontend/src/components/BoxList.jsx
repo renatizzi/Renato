@@ -298,13 +298,13 @@ export const BoxList = () => {
       <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
         <DialogContent className="sm:max-w-sm text-center">
           <DialogHeader>
-            <DialogTitle>QR Code Contenitore #{selectedBoxForQR?.box_number}</DialogTitle>
+            <DialogTitle>{t('qrCodeTitle')} #{selectedBoxForQR?.box_number}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="p-4 bg-white rounded-2xl">
               <QRCodeSVG
                 id="qr-code-print"
-                value={`Contenitore #${selectedBoxForQR?.box_number}`}
+                value={`${t('containerSection')} #${selectedBoxForQR?.box_number}`}
                 size={200}
                 level="H"
               />
@@ -312,7 +312,7 @@ export const BoxList = () => {
             <p className="text-3xl font-mono font-bold">#{selectedBoxForQR?.box_number}</p>
             <p className="text-muted-foreground">{selectedBoxForQR?.name}</p>
             <Button onClick={printQRCode} className="rounded-full w-full">
-              Stampa QR Code
+              {t('printQR')}
             </Button>
           </div>
         </DialogContent>
