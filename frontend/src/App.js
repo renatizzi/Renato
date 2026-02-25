@@ -116,7 +116,7 @@ const LoginPage = ({ onLogin }) => {
         <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm animate-slide-in-up">
           <CardHeader className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Lock className="text-primary" size={32} />
+              <img src="/icon.svg" alt="Box Manager" className="w-10 h-10" />
             </div>
             <CardTitle className="text-2xl font-extrabold">{APP_NAME}</CardTitle>
             <p className="text-muted-foreground">{t('loginTitle')}</p>
@@ -168,6 +168,7 @@ const GlobalHeader = ({ username, onLogout }) => {
       <div className="flex items-center justify-between px-4 py-3 md:px-6">
         {/* Left side - App name + username */}
         <div className="flex items-center gap-3">
+          <img src="/icon.svg" alt="Box Manager" className="w-9 h-9 hidden md:block" />
           <div>
             <h1 className="text-lg md:text-xl font-extrabold text-primary tracking-tight">
               {APP_NAME}
