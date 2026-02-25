@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/App";
+import { useLanguage } from "@/i18n";
 import { toast } from "sonner";
 import { Folders, Plus, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,22 +17,8 @@ const PRESET_COLORS = [
   "#6B7280", "#EF4444", "#F59E0B", "#10B981", "#3B82F6"
 ];
 
-// Categorie di default da creare se archivio vuoto
-const DEFAULT_CATEGORIES = [
-  { name: "Abbigliamento", color: "#3B82F6" },
-  { name: "Accessori", color: "#F59E0B" },
-  { name: "Attrezzature", color: "#6B7280" },
-  { name: "Documenti", color: "#2C332B" },
-  { name: "Elettronica", color: "#10B981" },
-  { name: "Giocattoli", color: "#EF4444" },
-  { name: "Libri", color: "#8C9E85" },
-  { name: "Oggetti Vari", color: "#D4A373" },
-  { name: "Ricordi", color: "#E6B89C" },
-  { name: "Sport", color: "#4A6741" },
-  { name: "Utensili", color: "#6B7280" }
-];
-
 export const CategoriesPage = () => {
+  const { t, language } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,8 +32,8 @@ export const CategoriesPage = () => {
   const fetchCategories = async () => {
     try {
       const response = await axios.get(`${API}/categories`);
-      // Ordina alfabeticamente
-      const sorted = response.data.sort((a, b) => a.name.localeCompare(b.name, 'it'));
+      const locale = language === 'en' ? 'en' : 'it';
+      const sorted = response.data.sort((a, b) => a.name.localeCompare(b.name, locale));
       setCategories(sorted);
       
       // Se non ci sono categorie, carica quelle di default
@@ -54,7 +41,7 @@ export const CategoriesPage = () => {
         await loadDefaultCategories();
       }
     } catch (error) {
-      toast.error("Errore nel caricamento categorie");
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -62,13 +49,17 @@ export const CategoriesPage = () => {
 
   const loadDefaultCategories = async () => {
     try {
-      for (const cat of DEFAULT_CATEGORIES) {
-        await axios.post(`${API}/categories`, cat);
+      const defaultCats = t('defaultCategories');
+      const colors = ["#3B82F6", "#F59E0B", "#6B7280", "#2C332B", "#10B981", "#EF4444", "#8C9E85", "#D4A373", "#E6B89C", "#4A6741", "#6B7280"];
+      
+      for (let i = 0; i < defaultCats.length; i++) {
+        await axios.post(`${API}/categories`, { name: defaultCats[i], color: colors[i % colors.length] });
       }
       const response = await axios.get(`${API}/categories`);
-      const sorted = response.data.sort((a, b) => a.name.localeCompare(b.name, 'it'));
+      const locale = language === 'en' ? 'en' : 'it';
+      const sorted = response.data.sort((a, b) => a.name.localeCompare(b.name, locale));
       setCategories(sorted);
-      toast.success("Categorie di default caricate");
+      toast.success(t('success'));
     } catch (error) {
       console.error("Error loading default categories:", error);
     }
@@ -79,27 +70,27 @@ export const CategoriesPage = () => {
     try {
       if (editingCategory) {
         await axios.put(`${API}/categories/${editingCategory.id}`, formData);
-        toast.success("Categoria modificata");
+        toast.success(t('success'));
       } else {
         await axios.post(`${API}/categories`, formData);
-        toast.success("Categoria creata");
+        toast.success(t('success'));
       }
       setIsDialogOpen(false);
       setEditingCategory(null);
       setFormData({ name: "", color: "#4A6741" });
       fetchCategories();
     } catch (error) {
-      toast.error("Errore nel salvare la categoria");
+      toast.error(t('error'));
     }
   };
 
   const handleDelete = async (categoryId) => {
     try {
       await axios.delete(`${API}/categories/${categoryId}`);
-      toast.success("Categoria eliminata");
+      toast.success(t('success'));
       fetchCategories();
     } catch (error) {
-      toast.error("Errore nell'eliminazione");
+      toast.error(t('error'));
     }
   };
 
@@ -116,14 +107,11 @@ export const CategoriesPage = () => {
     setIsDialogOpen(true);
   };
 
-  // Previene chiusura accidentale del dialog
   const handleDialogChange = (open) => {
     if (!open && (formData.name || editingCategory)) {
-      // Mostra conferma solo se ci sono dati inseriti
       if (formData.name && formData.name !== editingCategory?.name) {
-        if (!window.confirm("Sei sicuro di voler chiudere? I dati inseriti andranno persi.")) {
-          return;
-        }
+        const confirmMsg = language === 'en' ? "Close? Data will be lost." : "Chiudere? I dati andranno persi.";
+        if (!window.confirm(confirmMsg)) return;
       }
     }
     setIsDialogOpen(open);
@@ -144,39 +132,39 @@ export const CategoriesPage = () => {
   const useCompactView = categories.length > 10;
 
   return (
-    <div className="space-y-8 animate-slide-in-up" data-testid="categories-page">
+    <div className="space-y-6 animate-slide-in-up" data-testid="categories-page">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Gestione Categorie</h1>
-          <p className="text-muted-foreground mt-1">Crea e organizza la categoria colorata del singolo contenitore (tipologia degli oggetti contenuti, descrizione, caratteristica, ecc.)</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('categoriesTitle')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('categoriesDesc')}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-category-btn">
               <Plus size={18} />
-              Nuova Categoria
+              {t('newCategory')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
-              <DialogTitle>{editingCategory ? "Modifica Categoria" : "Nuova Categoria"}</DialogTitle>
+              <DialogTitle>{editingCategory ? t('editCategory') : t('newCategory')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="category_name">Nome</Label>
+                <Label htmlFor="category_name">{t('categoryName')}</Label>
                 <Input
                   id="category_name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="es. Elettronica, Libri, Vestiti"
+                  placeholder={t('categoryPlaceholder')}
                   required
                   className="mt-1"
                   data-testid="category-name-input"
                 />
               </div>
               <div>
-                <Label>Colore</Label>
+                <Label>{t('categoryColor')}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {PRESET_COLORS.map((color) => (
                     <button
@@ -187,7 +175,6 @@ export const CategoriesPage = () => {
                       }`}
                       style={{ backgroundColor: color }}
                       onClick={() => setFormData({ ...formData, color })}
-                      data-testid={`color-${color}`}
                     />
                   ))}
                 </div>
@@ -196,15 +183,14 @@ export const CategoriesPage = () => {
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   className="mt-3 h-10 w-full cursor-pointer"
-                  data-testid="color-picker"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => handleDialogChange(false)} className="rounded-full">
-                  Annulla
+                  {t('cancel')}
                 </Button>
                 <Button type="submit" className="rounded-full" data-testid="save-category-btn">
-                  {editingCategory ? "Salva" : "Crea"}
+                  {editingCategory ? t('save') : t('create')}
                 </Button>
               </div>
             </form>
@@ -216,65 +202,51 @@ export const CategoriesPage = () => {
       {categories.length === 0 ? (
         <div className="empty-state py-16">
           <Folders className="text-muted-foreground/50 mb-4" size={64} />
-          <h3 className="text-xl font-semibold mb-2">Nessuna categoria</h3>
-          <p className="text-muted-foreground mb-4">Crea categorie per organizzare i tuoi contenitori</p>
+          <h3 className="text-xl font-semibold mb-2">{t('noCategories')}</h3>
+          <p className="text-muted-foreground mb-4">{t('createFirstCategory')}</p>
           <Button className="rounded-full" onClick={openNewDialog}>
             <Plus size={18} className="mr-2" />
-            Nuova Categoria
+            {t('newCategory')}
           </Button>
         </div>
       ) : useCompactView ? (
-        // Vista compatta per > 10 categorie
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">Colore</TableHead>
-                  <TableHead>Nome Categoria</TableHead>
-                  <TableHead className="text-right w-24">Azioni</TableHead>
+                  <TableHead className="w-12">{t('categoryColor')}</TableHead>
+                  <TableHead>{t('categoryName')}</TableHead>
+                  <TableHead className="text-right w-24"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categories.map((category) => (
                   <TableRow key={category.id} data-testid={`category-row-${category.id}`}>
                     <TableCell>
-                      <div 
-                        className="w-8 h-8 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: category.color }} />
                     </TableCell>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={(e) => openEditDialog(category, e)}
-                          data-testid={`edit-category-${category.id}`}
-                        >
+                        <Button variant="ghost" size="icon" onClick={(e) => openEditDialog(category, e)}>
                           <Edit2 size={16} />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" data-testid={`delete-category-${category.id}`}>
+                            <Button variant="ghost" size="icon">
                               <Trash2 size={16} className="text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Eliminare la categoria?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                La categoria verrà rimossa. I contenitori associati rimarranno senza categoria.
-                              </AlertDialogDescription>
+                              <AlertDialogTitle>{t('deleteCategory')}</AlertDialogTitle>
+                              <AlertDialogDescription>{t('deleteCategoryWarning')}</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDelete(category.id)}
-                                className="rounded-full bg-destructive"
-                              >
-                                Elimina
+                              <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(category.id)} className="rounded-full bg-destructive">
+                                {t('delete')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -288,7 +260,6 @@ export const CategoriesPage = () => {
           </CardContent>
         </Card>
       ) : (
-        // Vista griglia per <= 10 categorie
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category, index) => (
             <Card 
@@ -299,14 +270,8 @@ export const CategoriesPage = () => {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div 
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                      style={{ backgroundColor: `${category.color}20` }}
-                    >
-                      <div 
-                        className="w-6 h-6 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${category.color}20` }}>
+                      <div className="w-6 h-6 rounded-full" style={{ backgroundColor: category.color }} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{category.name}</h3>
@@ -314,34 +279,24 @@ export const CategoriesPage = () => {
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={(e) => openEditDialog(category, e)}
-                      data-testid={`edit-category-${category.id}`}
-                    >
+                    <Button variant="ghost" size="icon" onClick={(e) => openEditDialog(category, e)}>
                       <Edit2 size={16} />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" data-testid={`delete-category-${category.id}`}>
+                        <Button variant="ghost" size="icon">
                           <Trash2 size={16} className="text-destructive" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Eliminare la categoria?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            La categoria verrà rimossa. I contenitori associati rimarranno senza categoria.
-                          </AlertDialogDescription>
+                          <AlertDialogTitle>{t('deleteCategory')}</AlertDialogTitle>
+                          <AlertDialogDescription>{t('deleteCategoryWarning')}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleDelete(category.id)}
-                            className="rounded-full bg-destructive"
-                          >
-                            Elimina
+                          <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(category.id)} className="rounded-full bg-destructive">
+                            {t('delete')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
