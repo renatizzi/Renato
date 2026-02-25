@@ -44,7 +44,7 @@ const ItemImage = ({ url, name, size = "md" }) => {
 };
 
 // Camera Capture Component
-const CameraCapture = ({ onCapture, onClose }) => {
+const CameraCapture = ({ onCapture, onClose, t }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -72,7 +72,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
     stopCamera();
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError("Il tuo browser non supporta l'accesso alla fotocamera.");
+      setError(t('cameraNotSupported'));
       setIsLoading(false);
       return;
     }
@@ -91,14 +91,14 @@ const CameraCapture = ({ onCapture, onClose }) => {
         videoRef.current.onloadedmetadata = () => {
           videoRef.current.play()
             .then(() => { setCameraReady(true); setIsLoading(false); })
-            .catch(() => { setError("Errore nell'avvio del video."); setIsLoading(false); });
+            .catch(() => { setError(t('cameraError')); setIsLoading(false); });
         };
       }
     } catch (err) {
-      let errorMessage = "Impossibile accedere alla fotocamera.";
-      if (err.name === 'NotAllowedError') errorMessage = "Permesso fotocamera negato.";
-      else if (err.name === 'NotFoundError') errorMessage = "Nessuna fotocamera trovata.";
-      else if (err.name === 'NotReadableError') errorMessage = "Fotocamera in uso da altra app.";
+      let errorMessage = t('cameraError');
+      if (err.name === 'NotAllowedError') errorMessage = t('cameraPermissionDenied');
+      else if (err.name === 'NotFoundError') errorMessage = t('cameraNotFound');
+      else if (err.name === 'NotReadableError') errorMessage = t('cameraInUse');
       setError(errorMessage);
       setIsLoading(false);
     }
@@ -132,8 +132,8 @@ const CameraCapture = ({ onCapture, onClose }) => {
           <Camera className="mx-auto mb-4 text-muted-foreground" size={48} />
           <p className="text-destructive mb-2">{error}</p>
           <div className="flex gap-2 justify-center">
-            <Button onClick={startCamera} className="rounded-full">Riprova</Button>
-            <Button onClick={handleClose} variant="outline" className="rounded-full">Chiudi</Button>
+            <Button onClick={startCamera} className="rounded-full">{t('retry')}</Button>
+            <Button onClick={handleClose} variant="outline" className="rounded-full">{t('close')}</Button>
           </div>
         </div>
       ) : capturedImage ? (
@@ -143,10 +143,10 @@ const CameraCapture = ({ onCapture, onClose }) => {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => { setCapturedImage(null); startCamera(); }} variant="outline" className="flex-1 rounded-full gap-2">
-              <RotateCcw size={18} /> Nuova foto
+              <RotateCcw size={18} /> {t('newPhoto')}
             </Button>
             <Button onClick={() => onCapture(capturedImage)} className="flex-1 rounded-full gap-2">
-              <Save size={18} /> Conferma
+              <Save size={18} /> {t('confirmPhoto')}
             </Button>
           </div>
         </div>
@@ -165,7 +165,7 @@ const CameraCapture = ({ onCapture, onClose }) => {
               <RotateCcw size={18} />
             </Button>
             <Button onClick={takePhoto} className="flex-1 rounded-full gap-2" disabled={!cameraReady}>
-              <Camera size={18} /> {cameraReady ? "Scatta foto" : "Attendi..."}
+              <Camera size={18} /> {cameraReady ? t('takePhoto') : t('waitCamera')}
             </Button>
             <Button onClick={handleClose} variant="outline" size="icon" className="rounded-full">
               <X size={18} />
