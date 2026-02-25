@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/App";
-import { useLanguage } from "@/i18n";
+import { useLanguage, translateCategory, isDefaultCategory } from "@/i18n";
 import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
 import { toast } from "sonner";
 import { Folders, Plus, Trash2, Edit2 } from "lucide-react";
