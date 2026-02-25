@@ -3,11 +3,14 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import { Package, Search, Folders, Home, Menu, Lock, LogOut, MoreHorizontal } from "lucide-react";
+import { Package, Search, Folders, Home, Menu, Lock, LogOut, MoreHorizontal, Sun, Moon, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LanguageProvider, useLanguage } from "@/i18n";
+import { ThemeProvider, useTheme } from "@/theme";
 
 // Components
 import { Dashboard } from "@/components/Dashboard";
@@ -21,14 +24,13 @@ import { BackupPage } from "@/components/BackupPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
-
-// App name constant
 export const APP_NAME = "Box Manager";
 
 // Format date helper
-const formatSystemDate = () => {
+const formatSystemDate = (lang) => {
   const date = new Date();
-  return date.toLocaleDateString('it-IT', { 
+  const locale = lang === 'en' ? 'en-GB' : 'it-IT';
+  return date.toLocaleDateString(locale, { 
     day: '2-digit', 
     month: '2-digit', 
     year: 'numeric' 
@@ -37,11 +39,12 @@ const formatSystemDate = () => {
 
 // Login Component
 const LoginPage = ({ onLogin }) => {
+  const { t, language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [passwordRequired, setPasswordRequired] = useState(true);
 
   useEffect(() => {
     checkPasswordRequired();
@@ -51,16 +54,14 @@ const LoginPage = ({ onLogin }) => {
     try {
       const response = await axios.get(`${API}/auth/check`);
       const isRequired = response.data.password_enabled !== false;
-      setPasswordRequired(isRequired);
       
       if (!isRequired) {
         localStorage.setItem("archivio_auth", "true");
         onLogin();
-        toast.success("Benvenuto!");
+        toast.success(t('welcome'));
       }
     } catch (err) {
       console.error("Auth check error:", err);
-      setPasswordRequired(true);
     } finally {
       setCheckingAuth(false);
     }
@@ -75,9 +76,9 @@ const LoginPage = ({ onLogin }) => {
       await axios.post(`${API}/auth/verify`, { password });
       localStorage.setItem("archivio_auth", "true");
       onLogin();
-      toast.success("Accesso effettuato");
+      toast.success(t('loggedIn'));
     } catch (err) {
-      setError("Password errata");
+      setError(t('loginError'));
     } finally {
       setLoading(false);
     }
@@ -85,51 +86,70 @@ const LoginPage = ({ onLogin }) => {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm animate-slide-in-up">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Lock className="text-primary" size={32} />
-          </div>
-          <CardTitle className="text-2xl font-extrabold">{APP_NAME}</CardTitle>
-          <p className="text-muted-foreground">Inserisci la password per accedere</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="h-12 text-center text-lg"
-              data-testid="login-password-input"
-              autoFocus
-            />
-            {error && (
-              <p className="text-destructive text-sm text-center">{error}</p>
-            )}
-            <Button 
-              type="submit" 
-              className="w-full h-12 rounded-full btn-bounce"
-              disabled={loading || !password}
-              data-testid="login-submit-btn"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                "Accedi"
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header with language and theme */}
+      <header className="flex items-center justify-end gap-2 p-4">
+        <Select value={language} onValueChange={setLanguage}>
+          <SelectTrigger className="w-24 h-9">
+            <Globe size={16} className="mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="it">ITA</SelectItem>
+            <SelectItem value="en">ENG</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </Button>
+      </header>
+      
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm animate-slide-in-up">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Lock className="text-primary" size={32} />
+            </div>
+            <CardTitle className="text-2xl font-extrabold">{APP_NAME}</CardTitle>
+            <p className="text-muted-foreground">{t('loginTitle')}</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t('loginPlaceholder')}
+                className="h-12 text-center text-lg"
+                data-testid="login-password-input"
+                autoFocus
+              />
+              {error && (
+                <p className="text-destructive text-sm text-center">{error}</p>
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button 
+                type="submit" 
+                className="w-full h-12 rounded-full btn-bounce"
+                disabled={loading || !password}
+                data-testid="login-submit-btn"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  t('loginButton')
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -138,6 +158,8 @@ const LoginPage = ({ onLogin }) => {
 const GlobalHeader = ({ username, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const isHome = location.pathname === "/";
 
   return (
@@ -155,11 +177,26 @@ const GlobalHeader = ({ username, onLogout }) => {
           </div>
         </div>
         
-        {/* Right side - Date + Home icon */}
-        <div className="flex items-center gap-4">
+        {/* Right side - Language, Theme, Date, Home icon */}
+        <div className="flex items-center gap-2 md:gap-4">
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className="w-20 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="it">ITA</SelectItem>
+              <SelectItem value="en">ENG</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full h-8 w-8">
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </Button>
+          
           <span className="hidden sm:block text-sm text-muted-foreground">
-            {formatSystemDate()}
+            {formatSystemDate(language)}
           </span>
+          
           {!isHome && (
             <Button 
               variant="ghost" 
@@ -178,25 +215,25 @@ const GlobalHeader = ({ username, onLogout }) => {
   );
 };
 
-// Navigation Component - Sidebar menu
+// Navigation Component
 const Navigation = ({ onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showOtherMenu, setShowOtherMenu] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const navItems = [
-    { to: "/categories", icon: Folders, label: "Gestione Categorie" },
-    { to: "/boxes", icon: Package, label: "Gestione Contenitori" },
-    { to: "/search", icon: Search, label: "Ricerca Avanzata" },
-    { to: "/other", icon: MoreHorizontal, label: "Altre Funzioni", isSubmenu: true },
+    { to: "/categories", icon: Folders, labelKey: "menuCategories" },
+    { to: "/boxes", icon: Package, labelKey: "menuContainers" },
+    { to: "/search", icon: Search, labelKey: "menuSearch" },
+    { to: "/other", icon: MoreHorizontal, labelKey: "menuOther", isSubmenu: true },
   ];
 
   const otherFunctionsItems = [
-    { to: "/print", label: "Esporta & Stampa" },
-    { to: "/backup", label: "Backup & Ripristino" },
-    { to: "/password", label: "Impostazione utente e password" },
+    { to: "/print", labelKey: "menuExport" },
+    { to: "/backup", labelKey: "menuBackup" },
+    { to: "/password", labelKey: "menuPassword" },
   ];
-
-  const [showOtherMenu, setShowOtherMenu] = useState(false);
 
   const handleNavClick = (item) => {
     if (item.isSubmenu) {
@@ -211,7 +248,7 @@ const Navigation = ({ onLogout }) => {
   const NavContent = () => (
     <nav className="flex flex-col gap-2">
       {navItems.map((item) => (
-        <div key={item.to || item.label}>
+        <div key={item.to || item.labelKey}>
           {item.isSubmenu ? (
             <>
               <button
@@ -219,7 +256,7 @@ const Navigation = ({ onLogout }) => {
                 className="flex items-center gap-3 px-4 py-3 rounded-full transition-all duration-200 hover:bg-secondary text-foreground w-full text-left"
               >
                 <item.icon size={20} />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium">{t(item.labelKey)}</span>
               </button>
               {showOtherMenu && (
                 <div className="ml-8 mt-1 space-y-1">
@@ -236,7 +273,7 @@ const Navigation = ({ onLogout }) => {
                         }`
                       }
                     >
-                      {subItem.label}
+                      {t(subItem.labelKey)}
                     </NavLink>
                   ))}
                 </div>
@@ -255,7 +292,7 @@ const Navigation = ({ onLogout }) => {
               }
             >
               <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
+              <span className="font-medium">{t(item.labelKey)}</span>
             </NavLink>
           )}
         </div>
@@ -266,7 +303,7 @@ const Navigation = ({ onLogout }) => {
         data-testid="logout-btn"
       >
         <LogOut size={20} />
-        <span className="font-medium">Esci</span>
+        <span className="font-medium">{t('menuLogout')}</span>
       </button>
     </nav>
   );
@@ -327,17 +364,17 @@ function AppContent({ onLogout, username }) {
   );
 }
 
-function App() {
+function AppWrapper() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [username, setUsername] = useState("");
+  const { t } = useLanguage();
 
   useEffect(() => {
     const auth = localStorage.getItem("archivio_auth");
     setIsAuthenticated(auth === "true");
     setCheckingAuth(false);
     
-    // Fetch username
     if (auth === "true") {
       fetchUsername();
     }
@@ -361,7 +398,7 @@ function App() {
     localStorage.removeItem("archivio_auth");
     setIsAuthenticated(false);
     setUsername("");
-    toast.info("Disconnesso");
+    toast.info(t('loggedOut'));
   };
 
   if (checkingAuth) {
@@ -373,16 +410,28 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Toaster position="top-right" richColors />
-        {isAuthenticated ? (
-          <AppContent onLogout={handleLogout} username={username} />
-        ) : (
-          <LoginPage onLogin={handleLogin} />
-        )}
-      </BrowserRouter>
-    </div>
+    <>
+      {isAuthenticated ? (
+        <AppContent onLogout={handleLogout} username={username} />
+      ) : (
+        <LoginPage onLogin={handleLogin} />
+      )}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <div className="App">
+          <BrowserRouter>
+            <Toaster position="top-right" richColors />
+            <AppWrapper />
+          </BrowserRouter>
+        </div>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
