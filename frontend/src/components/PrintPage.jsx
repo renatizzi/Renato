@@ -52,7 +52,7 @@ export const PrintPage = () => {
       setCategories(categoriesRes.data);
       setLocations(locationsRes.data);
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     } finally {
       setLoading(false);
     }
@@ -132,7 +132,7 @@ export const PrintPage = () => {
       
       toast.success(t('success'));
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
   };
 

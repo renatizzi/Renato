@@ -30,7 +30,7 @@ export const BackupPage = () => {
       
       toast.success(t('success'));
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
   };
 
@@ -58,7 +58,7 @@ export const BackupPage = () => {
       
       toast.success(t('restoreSuccess'));
     } catch (error) {
-      toast.error(t('restoreError'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     } finally {
       setRestoring(false);
       e.target.value = '';

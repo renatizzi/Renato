@@ -42,7 +42,7 @@ export const CategoriesPage = () => {
         await loadDefaultCategories();
       }
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export const CategoriesPage = () => {
       setFormData({ name: "", color: "#4A6741" });
       fetchCategories();
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
   };
 
@@ -91,7 +91,7 @@ export const CategoriesPage = () => {
       toast.success(t('success'));
       fetchCategories();
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language));
     }
   };
 
