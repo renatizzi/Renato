@@ -42,10 +42,11 @@ export const BoxList = () => {
         axios.get(`${API}/boxes/locations`)
       ]);
       setBoxes(boxesRes.data);
-      setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, 'it')));
+      const locale = language === 'en' ? 'en' : 'it';
+      setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, locale)));
       setLocations(locationsRes.data);
     } catch (error) {
-      toast.error("Errore nel caricamento dati");
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
