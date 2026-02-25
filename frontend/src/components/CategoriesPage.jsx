@@ -30,6 +30,33 @@ export const CategoriesPage = () => {
     fetchCategories();
   }, []);
 
+  // Auto-translate default categories when language changes
+  useEffect(() => {
+    if (!loading && categories.length > 0) {
+      translateDefaultCategories();
+    }
+  }, [language]);
+
+  const translateDefaultCategories = async () => {
+    let updated = false;
+    for (const cat of categories) {
+      if (isDefaultCategory(cat.name)) {
+        const translated = translateCategory(cat.name, language);
+        if (translated !== cat.name) {
+          try {
+            await axios.put(`${API}/categories/${cat.id}`, { name: translated, color: cat.color });
+            updated = true;
+          } catch (err) {
+            // Skip silently if update fails
+          }
+        }
+      }
+    }
+    if (updated) {
+      fetchCategories();
+    }
+  };
+
   const fetchCategories = async () => {
     try {
       const response = await axios.get(`${API}/categories`);
