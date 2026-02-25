@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LanguageProvider, useLanguage } from "@/i18n";
 import { ThemeProvider, useTheme } from "@/theme";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Components
 import { Dashboard } from "@/components/Dashboard";
