@@ -47,7 +47,7 @@ export const BoxList = () => {
       setCategories(categoriesRes.data.sort((a, b) => a.name.localeCompare(b.name, locale)));
       setLocations(locationsRes.data);
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export const BoxList = () => {
       const response = await axios.get(`${API}/boxes`, { params });
       setBoxes(response.data);
     } catch (error) {
-      toast.error("Errore nel filtro");
+      toast.error(getErrorMessage(error, language));
     }
   };
 
@@ -87,7 +87,7 @@ export const BoxList = () => {
       setFormData({ name: "", category_id: "", location: "" });
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || t('error'));
+      toast.error(getErrorMessage(error, language), { description: getErrorSuggestion(error, language) });
     }
   };
 
@@ -97,7 +97,7 @@ export const BoxList = () => {
       toast.success(t('success'));
       fetchData();
     } catch (error) {
-      toast.error(t('error'));
+      toast.error(getErrorMessage(error, language));
     }
   };
 
