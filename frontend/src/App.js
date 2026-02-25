@@ -168,7 +168,7 @@ const GlobalHeader = ({ username, onLogout }) => {
       <div className="flex items-center justify-between px-4 py-3 md:px-6">
         {/* Left side - App name + username */}
         <div className="flex items-center gap-3">
-          <img src="/icon.svg" alt="Box Manager" className="w-9 h-9 hidden md:block" />
+          <img src="/icon.svg" alt="Box Manager" className="w-8 h-8 md:w-9 md:h-9" />
           <div>
             <h1 className="text-lg md:text-xl font-extrabold text-primary tracking-tight">
               {APP_NAME}
