@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API, APP_NAME } from "@/App";
+import { useLanguage } from "@/i18n";
 import { Folders, Package, Search, MoreHorizontal, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 export const Dashboard = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [stats, setStats] = useState({ total_boxes: 0, total_items: 0, total_categories: 0 });
   const [loading, setLoading] = useState(true);
   const [showOtherFunctions, setShowOtherFunctions] = useState(false);
@@ -28,34 +30,34 @@ export const Dashboard = () => {
     }
   };
 
-  // Menu items matching fig1 - NO "Gestione Oggetti" (removed as redundant)
+  // Menu items - 4 voci senza "Gestione Oggetti"
   const menuItems = [
     { 
       icon: Folders,
-      label: "Gestione Categorie",
-      description: "Crea e organizza la categoria colorata del singolo contenitore (tipologia degli oggetti contenuti, descrizione, caratteristica, ecc.)",
+      labelKey: "menuCategories",
+      descKey: "descCategories",
       count: stats.total_categories,
       link: "/categories"
     },
     { 
       icon: Package,
-      label: "Gestione Contenitori",
-      description: "Crea e organizza i contenitori (numerazione, categoria e posizione) con eventuale creazione e stampa del QR Code, consentendo la gestione degli oggetti ivi riposti.",
+      labelKey: "menuContainers",
+      descKey: "descContainers",
       count: stats.total_boxes,
       link: "/boxes"
     },
     { 
       icon: MoreHorizontal,
-      label: "Altre Funzioni",
-      description: "Esporta & Stampa, Backup & Ripristino, Password e impostazione utente",
+      labelKey: "menuOther",
+      descKey: "descOther",
       count: null,
       link: null,
       isOtherFunctions: true
     },
     { 
       icon: Search,
-      label: "Ricerca Avanzata",
-      description: "Trova gli oggetti custoditi nei contenitori mediante ricerca testuale o vocale",
+      labelKey: "menuSearch",
+      descKey: "descSearch",
       count: null,
       link: "/search"
     },
@@ -63,18 +65,18 @@ export const Dashboard = () => {
 
   const otherFunctionsMenu = [
     {
-      label: "Esporta & Stampa",
-      description: "Esporta l'archivio in un file CSV per l'elaborazione immediata con altre applicazioni e Stampa liste complete o parziali dell'archivio",
+      labelKey: "menuExport",
+      descKey: "descExport",
       link: "/print"
     },
     {
-      label: "Backup & Ripristino",
-      description: "Effettua il backup dell'archivio in formato JSON ed il relativo ripristino dei dati",
+      labelKey: "menuBackup",
+      descKey: "descBackup",
       link: "/backup"
     },
     {
-      label: "Impostazione utente e password",
-      description: "Consente di inserire il nome dell'utente e di gestire la password di accesso con possibilità di ripristino di quella originale",
+      labelKey: "menuPassword",
+      descKey: "descPassword",
       link: "/password"
     },
   ];
@@ -102,10 +104,10 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-slide-in-up" data-testid="dashboard">
-      {/* Header - Title styled like fig1 */}
+      {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-primary">
-          {APP_NAME} Dash-Board
+          {t('dashboardTitle')}
         </h1>
       </div>
 
@@ -116,17 +118,17 @@ export const Dashboard = () => {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Funzionalità</TableHead>
-                <TableHead className="text-right w-24">Totale</TableHead>
+                <TableHead>{t('functionality')}</TableHead>
+                <TableHead className="text-right w-24">{t('totalLabel')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {menuItems.map((item) => (
                 <TableRow 
-                  key={item.label}
+                  key={item.labelKey}
                   className="cursor-pointer hover:bg-secondary/50 transition-colors"
                   onClick={() => handleMenuClick(item)}
-                  data-testid={`menu-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  data-testid={`menu-${item.labelKey}`}
                 >
                   <TableCell className="py-4">
                     <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
@@ -136,8 +138,8 @@ export const Dashboard = () => {
                   <TableCell className="py-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-semibold">{item.label}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                        <p className="font-semibold">{t(item.labelKey)}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{t(item.descKey)}</p>
                       </div>
                       <ChevronRight className="text-muted-foreground ml-2 flex-shrink-0" size={20} />
                     </div>
@@ -158,29 +160,29 @@ export const Dashboard = () => {
       <Dialog open={showOtherFunctions} onOpenChange={setShowOtherFunctions}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-extrabold">Altre Funzioni</DialogTitle>
+            <DialogTitle className="text-2xl font-extrabold">{t('menuOther')}</DialogTitle>
           </DialogHeader>
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm mt-4">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Funzionalità</TableHead>
+                    <TableHead>{t('functionality')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {otherFunctionsMenu.map((item) => (
                     <TableRow 
-                      key={item.label}
+                      key={item.labelKey}
                       className="cursor-pointer hover:bg-secondary/50 transition-colors"
                       onClick={() => handleOtherFunctionClick(item)}
-                      data-testid={`other-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                      data-testid={`other-${item.labelKey}`}
                     >
                       <TableCell className="py-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-semibold">{item.label}</p>
-                            <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                            <p className="font-semibold">{t(item.labelKey)}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{t(item.descKey)}</p>
                           </div>
                           <ChevronRight className="text-muted-foreground ml-2 flex-shrink-0" size={20} />
                         </div>
