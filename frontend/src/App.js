@@ -421,6 +421,12 @@ function AppWrapper() {
   );
 }
 
+// Wrapper to pass language context to ErrorBoundary (class component)
+const ErrorBoundaryWithLanguage = ({ children }) => {
+  const { language } = useLanguage();
+  return <ErrorBoundary language={language}>{children}</ErrorBoundary>;
+};
+
 function App() {
   return (
     <ThemeProvider>
@@ -428,7 +434,9 @@ function App() {
         <div className="App">
           <BrowserRouter>
             <Toaster position="top-right" richColors />
-            <AppWrapper />
+            <ErrorBoundaryWithLanguage>
+              <AppWrapper />
+            </ErrorBoundaryWithLanguage>
           </BrowserRouter>
         </div>
       </LanguageProvider>
