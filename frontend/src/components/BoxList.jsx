@@ -263,13 +263,13 @@ export const BoxList = () => {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <Label className="text-xs text-muted-foreground mb-1 block">Categoria</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">{t('containerCategory')}</Label>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
                 <SelectTrigger data-testid="filter-category">
-                  <SelectValue placeholder="Tutte le categorie" />
+                  <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte le categorie</SelectItem>
+                  <SelectItem value="all">{t('allCategories')}</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))}
@@ -277,13 +277,13 @@ export const BoxList = () => {
               </Select>
             </div>
             <div className="flex-1">
-              <Label className="text-xs text-muted-foreground mb-1 block">Posizione</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">{t('containerLocation')}</Label>
               <Select value={filterLocation} onValueChange={setFilterLocation}>
                 <SelectTrigger data-testid="filter-location">
-                  <SelectValue placeholder="Tutte le posizioni" />
+                  <SelectValue placeholder={t('allLocations')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutte le posizioni</SelectItem>
+                  <SelectItem value="all">{t('allLocations')}</SelectItem>
                   {locations.map(loc => (
                     <SelectItem key={loc} value={loc}>{loc}</SelectItem>
                   ))}
