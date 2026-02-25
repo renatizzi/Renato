@@ -560,12 +560,12 @@ export const BoxDetail = () => {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Eliminare l'oggetto?</AlertDialogTitle>
-                          <AlertDialogDescription>"{item.name}" verrà eliminato permanentemente.</AlertDialogDescription>
+                          <AlertDialogTitle>{t('deleteItem')}</AlertDialogTitle>
+                          <AlertDialogDescription>"{item.name}" {t('deleteItemWarning')}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteItem(item.id)} className="rounded-full bg-destructive">Elimina</AlertDialogAction>
+                          <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteItem(item.id)} className="rounded-full bg-destructive">{t('delete')}</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
