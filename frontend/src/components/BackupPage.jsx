@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import axios from "axios";
 import { API } from "@/App";
+import { useLanguage } from "@/i18n";
 import { toast } from "sonner";
 import { Download, Upload, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,28 +9,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const BackupPage = () => {
+  const { t, language } = useLanguage();
   const [restoring, setRestoring] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleBackup = async () => {
     try {
-      const response = await axios.get(`${API}/backup`, {
-        responseType: 'blob'
-      });
+      const response = await axios.get(`${API}/backup`, { responseType: 'blob' });
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      const filename = `archivio_backup_${new Date().toISOString().slice(0,10)}.json`;
+      const filename = `boxmanager_backup_${new Date().toISOString().slice(0,10)}.json`;
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      toast.success("Backup scaricato con successo");
+      toast.success(t('success'));
     } catch (error) {
-      toast.error("Errore nel backup");
+      toast.error(t('error'));
     }
   };
 
@@ -42,7 +42,7 @@ export const BackupPage = () => {
     if (!file) return;
     
     if (!file.name.endsWith('.json')) {
-      toast.error("Seleziona un file JSON valido");
+      toast.error(t('selectFile'));
       return;
     }
     
@@ -51,13 +51,13 @@ export const BackupPage = () => {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axios.post(`${API}/restore`, formData, {
+      await axios.post(`${API}/restore`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      toast.success(`Ripristino completato: ${response.data.restored.boxes} contenitori, ${response.data.restored.categories} categorie`);
+      toast.success(t('restoreSuccess'));
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Errore nel ripristino");
+      toast.error(t('restoreError'));
     } finally {
       setRestoring(false);
       e.target.value = '';
@@ -65,11 +65,11 @@ export const BackupPage = () => {
   };
 
   return (
-    <div className="space-y-8 animate-slide-in-up max-w-2xl" data-testid="backup-page">
+    <div className="space-y-6 animate-slide-in-up max-w-2xl" data-testid="backup-page">
       {/* Header */}
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Backup & Ripristino</h1>
-        <p className="text-muted-foreground mt-1">Effettua il backup dell'archivio in formato JSON ed il relativo ripristino dei dati</p>
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('backupTitle')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('backupDesc')}</p>
       </div>
 
       {/* Backup */}
@@ -77,18 +77,14 @@ export const BackupPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download size={20} />
-            Backup Archivio
+            {t('createBackup')}
           </CardTitle>
-          <CardDescription>Scarica una copia completa dell'archivio in formato JSON</CardDescription>
+          <CardDescription>{t('createBackupDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button 
-            onClick={handleBackup}
-            className="rounded-full gap-2"
-            data-testid="backup-btn"
-          >
+          <Button onClick={handleBackup} className="rounded-full gap-2" data-testid="backup-btn">
             <Download size={16} />
-            Scarica Backup
+            {t('downloadBackup')}
           </Button>
         </CardContent>
       </Card>
@@ -98,60 +94,46 @@ export const BackupPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload size={20} />
-            Ripristino Archivio
+            {t('restoreBackup')}
           </CardTitle>
-          <CardDescription>Ripristina l'archivio da un file di backup JSON</CardDescription>
+          <CardDescription>{t('restoreBackupDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleRestoreFile}
-            accept=".json"
-            className="hidden"
-          />
+          <input type="file" ref={fileInputRef} onChange={handleRestoreFile} accept=".json" className="hidden" />
           
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline"
-                className="rounded-full gap-2"
-                disabled={restoring}
-                data-testid="restore-btn"
-              >
+              <Button variant="outline" className="rounded-full gap-2" disabled={restoring} data-testid="restore-btn">
                 <Upload size={16} />
-                {restoring ? "Ripristino in corso..." : "Ripristina da Backup"}
+                {restoring ? t('loading') : t('restoreFromFile')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
                   <AlertTriangle className="text-destructive" size={20} />
-                  Conferma Ripristino
+                  {t('confirmRestore')}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  <strong>Attenzione:</strong> Il ripristino cancellerà tutti i dati attuali e li sostituirà con quelli del backup. Questa azione è irreversibile.
+                  <strong>{t('warning')}:</strong> {t('confirmRestoreDesc')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-full">Annulla</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleRestoreClick}
-                  className="rounded-full bg-destructive"
-                >
-                  Seleziona File e Ripristina
+                <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRestoreClick} className="rounded-full bg-destructive">
+                  {t('selectFile')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
           
           <div className="p-4 rounded-xl bg-muted/50 text-sm">
-            <p className="font-medium mb-2">Informazioni sul Backup:</p>
+            <p className="font-medium mb-2">{language === 'en' ? 'Backup Info:' : 'Informazioni sul Backup:'}</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li>Il backup include tutti i contenitori, oggetti e categorie</li>
-              <li>Formato file: JSON (leggibile e modificabile)</li>
-              <li>Il ripristino sovrascrive completamente i dati esistenti</li>
-              <li>Consigliato: effettua backup regolari</li>
+              <li>{language === 'en' ? 'Backup includes all containers, items and categories' : 'Il backup include tutti i contenitori, oggetti e categorie'}</li>
+              <li>{language === 'en' ? 'File format: JSON (readable and editable)' : 'Formato file: JSON (leggibile e modificabile)'}</li>
+              <li>{language === 'en' ? 'Restore completely overwrites existing data' : 'Il ripristino sovrascrive completamente i dati esistenti'}</li>
+              <li>{language === 'en' ? 'Recommended: make regular backups' : 'Consigliato: effettua backup regolari'}</li>
             </ul>
           </div>
         </CardContent>
