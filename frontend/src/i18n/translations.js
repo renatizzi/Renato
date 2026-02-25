@@ -447,4 +447,37 @@ export const getTranslation = (lang, key) => {
   return value || key;
 };
 
+// Bidirectional mapping of default categories IT <-> EN
+export const categoryMap = {
+  "Abiti": "Clothing",
+  "Box di cartone": "Cardboard boxes",
+  "Box di plastica": "Plastic boxes",
+  "Casalinghi": "Household items",
+  "Elettricità": "Electrical",
+  "Elettronica": "Electronics",
+  "Fai da te": "DIY",
+  "Foto & Video": "Photos & Videos",
+  "Libri": "Books",
+  "Materiale vario": "Miscellaneous",
+  "Minuteria": "Small items"
+};
+
+// Reverse map EN -> IT
+export const categoryMapReverse = Object.fromEntries(
+  Object.entries(categoryMap).map(([it, en]) => [en, it])
+);
+
+// Translate a category name from one language to another
+export const translateCategory = (name, toLang) => {
+  if (toLang === 'en') {
+    return categoryMap[name] || name;
+  }
+  return categoryMapReverse[name] || name;
+};
+
+// Check if a category name is a known default
+export const isDefaultCategory = (name) => {
+  return name in categoryMap || name in categoryMapReverse;
+};
+
 export default translations;
