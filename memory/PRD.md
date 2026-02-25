@@ -1,109 +1,110 @@
-# Archivio Oggetti Personali - PRD
+# Box Manager - PRD
 
 ## Problem Statement
-App per gestire un archivio di oggetti personali con numerazione univoca scatole, timestamp inserimento, ricerca testuale e vocale, modifica dati, stampa/export lista.
+App per gestire un archivio di oggetti personali con numerazione univoca contenitori, timestamp, ricerca testuale/vocale, modifica dati, stampa/export liste.
 
 ## User Personas
-- Utenti domestici che gestiscono il proprio inventario casalingo
+- Utenti domestici che gestiscono inventario casalingo
 - Persone che organizzano traslochi o riordini
-
-## Core Requirements
-- [x] Numerazione univoca e automatica dei contenitori
-- [x] Timestamp automatico all'inserimento dati
-- [x] Ricerca testuale per nome/descrizione oggetti
-- [x] Ricerca vocale (Web Speech API browser)
-- [x] Modifica numero contenitore e contenuto
-- [x] Categorie per organizzazione
-- [x] Stampa lista (PDF via browser)
-- [x] Export CSV
-- [x] Selezione parziale per stampa/export
 
 ## Tech Stack
 - Backend: FastAPI + MongoDB
 - Frontend: React + Tailwind + Shadcn/UI
 - Voice: Web Speech API (browser native)
+- i18n: Custom context (ITA/ENG)
+- Theme: Dark/Light mode con CSS variables
 
 ## What's Implemented
 
-### Fase 1 (20 Gen 2025)
-- Dashboard con statistiche (contenitori, oggetti, categorie)
-- CRUD completo contenitori con auto-numerazione
-- CRUD oggetti dentro i contenitori
-- CRUD categorie con colori personalizzati
-- Ricerca testuale con risultati
-- Ricerca vocale (italiano)
-- Modifica numero contenitore
-- Modifica contenuto (nome, descrizione)
-- Stampa browser (PDF)
-- Export CSV
-- Selezione parziale per export
-- Design responsive mobile/desktop
+### Phase 1-4 (Gen 2025)
+- Dashboard con statistiche
+- CRUD contenitori e oggetti
+- CRUD categorie con colori
+- Ricerca testuale e vocale
+- QR Code generation
+- Export CSV e backup JSON
+- Password protection
+- Camera capture per foto oggetti
 
-### Fase 2 (21 Gen 2025)
-- **Password di accesso**: Password singola per proteggere l'app
-- **URL Immagini**: Campo per aggiungere URL immagine agli oggetti con anteprima
-- **Filtro per posizione**: Dropdown per filtrare contenitori per posizione
-- **QR Code**: Generazione QR code con numero contenitore per identificazione rapida
-- Logout funzionalità
-- Immagini visibili nei risultati di ricerca
+### Phase 5 (Feb 2025) - UI Refactoring
+**Completato:**
+- ✅ A1: Dashboard ridisegnata secondo fig1 (4 voci menu, no "Gestione Oggetti")
+- ✅ A2: Header globale con "Box Manager" + username + data + Home icon
+- ✅ A3: Rimosso link "Riepilogo" dall'header
+- ✅ A4: Icona Home in alto a destra su tutte le pagine
+- ✅ A5: Layout Contenitori aggiornato secondo fig2
+- ✅ A6: Layout Contenuto/Oggetti aggiornato secondo fig3
+- ✅ A7-A8: Password page rinominata "Impostazione utente e password"
+- ✅ B2: Dark mode implementata con CSS variables
+- ✅ B3: App rinominata "Box Manager"
+- ✅ B5: Sistema bilingue ITA/ENG con selettore lingua
 
-### Fase 3 (21 Gen 2025)
-- **Gestione Password**: Modifica password, reset con master password (masterreset2025)
-- **Descrizione Funzioni**: Home page con tabella menu funzionalità
-- **Backup/Ripristino**: Export/import completo archivio in formato JSON
-- **Pagina Impostazioni**: Nuova sezione per gestire password e backup
-- Password salvata in MongoDB (modificabile a runtime)
-
-### Fase 4 (24 Gen 2025)
-- **Nuova Dashboard**: "Riepilogo contenitori" con tabella menu funzionalità
-- **Menu Altre Funzioni**: Dialog con Esporta & Stampa, Backup & Ripristino, Password
-- **Terminologia**: "Scatola" → "Contenitore" in tutta l'app
-- **Acquisizione Foto**: Fotocamera dispositivo invece di URL (base64)
-- Descrizioni dettagliate per ogni funzionalità
-- Contatori per categorie, contenitori e oggetti
-
-### Fase 5 (1 Feb 2025) - COMPLETATA
-- **Bug Camera Risolto**: La camera ora mostra messaggi di errore user-friendly invece di crashare
-  - "Nessuna fotocamera trovata sul dispositivo"
-  - "Permesso fotocamera negato. Abilita l'accesso nelle impostazioni del browser"
-  - "La fotocamera è in uso da un'altra applicazione"
-  - Pulsanti "Riprova" e "Chiudi"
-- **Username Editabile**: Campo per inserire il nome utente nella pagina Password
-- **Password Opzionale**: Switch per abilitare/disabilitare la protezione password
-- **Menu Hamburger Sincronizzato**: Menu mobile corrisponde esattamente alla dashboard
-- **Categorie Alfabetiche**: Liste ordinate alfabeticamente
-- **Categorie Default**: Seeding automatico con 11 categorie predefinite se archivio vuoto
-- **Logout Funzionante**: Pulsante "Esci" nel menu laterale
-- **Dialog Stabili**: I form non si chiudono accidentalmente cliccando fuori
+**Da completare:**
+- A9: Filtri avanzati in Esporta & Stampa
+- B1: Gestione errori user-friendly
+- B4: Icona app con box stilizzato
+- B6: Export immagini nel backup JSON
+- C1-C3: Ottimizzazione Android/APK/Play Store + istruzioni build
 
 ## Credenziali
-- **Password attuale**: 1954 (modificata dall'utente)
-- **Password default**: archivio2025
-- **Master password**: masterreset2025 (per reset)
+- **Password**: archivio2025
+- **Master password**: masterreset2025
 
 ## API Endpoints
-- `/api/auth/verify` - Verifica password
-- `/api/auth/check` - Controlla se password è richiesta
-- `/api/auth/settings` - GET/POST username e password_enabled
-- `/api/auth/change-password` - Modifica password
-- `/api/auth/reset-password` - Reset con master password
-- `/api/categories` - CRUD categorie
-- `/api/boxes` - CRUD contenitori
-- `/api/boxes/{id}/items` - CRUD oggetti
-- `/api/search` - Ricerca
-- `/api/stats` - Statistiche
-- `/api/export/csv` - Export CSV
-- `/api/backup` - Backup JSON
-- `/api/restore` - Ripristino da backup
+- `/api/auth/verify`, `/api/auth/check`, `/api/auth/settings`
+- `/api/auth/change-password`, `/api/auth/reset-password`
+- `/api/categories` - CRUD
+- `/api/boxes` - CRUD
+- `/api/boxes/{id}/items` - CRUD
+- `/api/search`, `/api/stats`
+- `/api/export/csv`, `/api/backup`, `/api/restore`
 
-## Backlog / Future Features
+## File Structure
+```
+/app/
+├── backend/
+│   ├── server.py
+│   └── .env
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   │   ├── Dashboard.jsx
+    │   │   ├── BoxList.jsx
+    │   │   ├── BoxDetail.jsx
+    │   │   ├── SearchPage.jsx
+    │   │   ├── CategoriesPage.jsx
+    │   │   ├── PrintPage.jsx
+    │   │   ├── PasswordPage.jsx
+    │   │   └── BackupPage.jsx
+    │   ├── i18n/
+    │   │   ├── translations.js
+    │   │   ├── LanguageContext.jsx
+    │   │   └── index.js
+    │   ├── theme/
+    │   │   ├── ThemeContext.jsx
+    │   │   └── index.js
+    │   ├── App.js
+    │   └── index.css
+    └── package.json
+```
 
-### P1 (Alta Priorità)
-- Ordinamento risultati ricerca per rilevanza
+## Backlog / Next Steps
+
+### P0 (Alta Priorità)
+- A9: Migliorare filtri Esporta & Stampa (posizione, categoria, contenitore, oggetto)
+- B6: Export immagini nel backup JSON
+
+### P1 (Media Priorità)
+- B1: Gestione errori user-friendly in tutta l'app
+- B4: Creare icona app con box stilizzato
+- Completare traduzioni in tutti i componenti
+
+### P2 (Bassa Priorità)
+- C1: Ottimizzazione per Android smartphone/tablet
+- C2: Aggiungere commenti al codice
+- C3: Istruzioni per build Android APK
+
+### Backlog Futuro
+- Notifiche per contenitori non aggiornati
+- Condivisione archivio tra utenti
 - Compressione immagini per ridurre storage
-
-### P2 (Media Priorità)
-- Dark mode
-- Condivisione archivio con altri utenti
-- Notifiche per contenitori non aggiornati da tempo
-- Vista calendario per date inserimento
