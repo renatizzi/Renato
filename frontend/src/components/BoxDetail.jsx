@@ -335,25 +335,26 @@ export const BoxDetail = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
-              <DialogTitle>{editingItem ? "Modifica Oggetto" : "Nuovo Oggetto"}</DialogTitle>
+              <DialogTitle>{editingItem ? t('editItem') : t('newItem')}</DialogTitle>
             </DialogHeader>
             {isCameraOpen ? (
               <CameraCapture 
+                t={t}
                 onCapture={(img) => { setItemForm({ ...itemForm, image_data: img }); setIsCameraOpen(false); }} 
                 onClose={() => setIsCameraOpen(false)}
               />
             ) : (
               <form onSubmit={handleAddItem} className="space-y-4">
                 <div>
-                  <Label htmlFor="item_name">Nome</Label>
-                  <Input id="item_name" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="es. Libro di cucina" required className="mt-1" data-testid="item-name-input" />
+                  <Label htmlFor="item_name">{t('itemName')}</Label>
+                  <Input id="item_name" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder={t('itemNamePlaceholder')} required className="mt-1" data-testid="item-name-input" />
                 </div>
                 <div>
-                  <Label htmlFor="item_description">Descrizione (opzionale)</Label>
-                  <Textarea id="item_description" value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} placeholder="Aggiungi dettagli..." className="mt-1" rows={3} data-testid="item-description-input" />
+                  <Label htmlFor="item_description">{t('itemDescription')}</Label>
+                  <Textarea id="item_description" value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} placeholder={t('itemDescPlaceholder')} className="mt-1" rows={3} data-testid="item-description-input" />
                 </div>
                 <div>
-                  <Label>Foto (opzionale)</Label>
+                  <Label>{t('itemPhoto')}</Label>
                   {itemForm.image_data ? (
                     <div className="mt-2 space-y-2">
                       <div className="relative rounded-xl overflow-hidden border border-border">
@@ -363,18 +364,18 @@ export const BoxDetail = () => {
                         </Button>
                       </div>
                       <Button type="button" variant="outline" className="w-full rounded-full gap-2" onClick={() => setIsCameraOpen(true)}>
-                        <Camera size={16} /> Scatta nuova foto
+                        <Camera size={16} /> {t('newPhoto')}
                       </Button>
                     </div>
                   ) : (
                     <Button type="button" variant="outline" className="w-full mt-2 rounded-full gap-2" onClick={() => setIsCameraOpen(true)} data-testid="open-camera-btn">
-                      <Camera size={16} /> Scatta foto
+                      <Camera size={16} /> {t('takePhoto')}
                     </Button>
                   )}
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => handleItemDialogChange(false)} className="rounded-full">Annulla</Button>
-                  <Button type="submit" className="rounded-full" data-testid="save-item-btn">{editingItem ? "Salva" : "Aggiungi"}</Button>
+                  <Button type="button" variant="outline" onClick={() => handleItemDialogChange(false)} className="rounded-full">{t('cancel')}</Button>
+                  <Button type="submit" className="rounded-full" data-testid="save-item-btn">{editingItem ? t('save') : t('add')}</Button>
                 </div>
               </form>
             )}
@@ -385,7 +386,7 @@ export const BoxDetail = () => {
       {/* Section: Contenitore - matching fig3 */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold">Contenitore</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t('containerSection')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row md:items-center gap-4">
