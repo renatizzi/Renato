@@ -64,7 +64,7 @@ export const LanguageProvider = ({ children }) => {
 
   const value = {
     language,
-    setLanguage,
+    setLanguage: handleSetLanguage,
     t,
     isItalian: language === 'it',
     isEnglish: language === 'en'
