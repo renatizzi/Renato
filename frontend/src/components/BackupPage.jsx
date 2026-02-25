@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import axios from "axios";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
+import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
 import { toast } from "sonner";
 import { Download, Upload, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";

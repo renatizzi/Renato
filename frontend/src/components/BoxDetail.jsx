@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
+import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { it, enGB } from "date-fns/locale";
