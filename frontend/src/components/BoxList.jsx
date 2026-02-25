@@ -190,46 +190,44 @@ export const BoxList = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Gestione Contenitori</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Crea e organizza i contenitori (numerazione, categoria e posizione) con eventuale creazione e stampa del QR Code
-          </p>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('containersTitle')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('containersDesc')}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
             <Button className="rounded-full btn-bounce gap-2" onClick={openNewDialog} data-testid="new-box-btn">
               <Plus size={18} />
-              Nuovo Contenitore
+              {t('newContainer')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader>
-              <DialogTitle>{editingBox ? "Modifica Contenitore" : "Nuovo Contenitore"}</DialogTitle>
+              <DialogTitle>{editingBox ? t('editContainer') : t('newContainer')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name">{t('containerName')}</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="es. Libri Camera"
+                  placeholder={t('containerNamePlaceholder')}
                   required
                   className="mt-1"
                   data-testid="box-name-input"
                 />
               </div>
               <div>
-                <Label htmlFor="category">Categoria</Label>
+                <Label htmlFor="category">{t('containerCategory')}</Label>
                 <Select 
                   value={formData.category_id} 
                   onValueChange={(val) => setFormData({ ...formData, category_id: val === "none" ? "" : val })}
                 >
                   <SelectTrigger className="mt-1" data-testid="box-category-select">
-                    <SelectValue placeholder="Seleziona categoria" />
+                    <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Nessuna categoria</SelectItem>
+                    <SelectItem value="none">{t('noCategory')}</SelectItem>
                     {categories.map(cat => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
@@ -237,22 +235,22 @@ export const BoxList = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="location">Posizione</Label>
+                <Label htmlFor="location">{t('containerLocation')}</Label>
                 <Input
                   id="location"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="es. Cantina, Scaffale 3"
+                  placeholder={t('containerLocationPlaceholder')}
                   className="mt-1"
                   data-testid="box-location-input"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => handleDialogChange(false)} className="rounded-full">
-                  Annulla
+                  {t('cancel')}
                 </Button>
                 <Button type="submit" className="rounded-full" data-testid="save-box-btn">
-                  {editingBox ? "Salva" : "Crea"}
+                  {editingBox ? t('save') : t('create')}
                 </Button>
               </div>
             </form>
