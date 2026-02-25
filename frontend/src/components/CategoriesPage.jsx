@@ -30,32 +30,12 @@ export const CategoriesPage = () => {
     fetchCategories();
   }, []);
 
-  // Auto-translate default categories when language changes
+  // Refresh categories when language changes (categories may have been auto-translated)
   useEffect(() => {
-    if (!loading && categories.length > 0) {
-      translateDefaultCategories();
-    }
-  }, [language]);
-
-  const translateDefaultCategories = async () => {
-    let updated = false;
-    for (const cat of categories) {
-      if (isDefaultCategory(cat.name)) {
-        const translated = translateCategory(cat.name, language);
-        if (translated !== cat.name) {
-          try {
-            await axios.put(`${API}/categories/${cat.id}`, { name: translated, color: cat.color });
-            updated = true;
-          } catch (err) {
-            // Skip silently if update fails
-          }
-        }
-      }
-    }
-    if (updated) {
+    if (!loading) {
       fetchCategories();
     }
-  };
+  }, [language]);
 
   const fetchCategories = async () => {
     try {
