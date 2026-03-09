@@ -93,5 +93,8 @@ App per gestire un archivio di oggetti personali con numerazione univoca conteni
 ### P2 (Bassa Priorita)
 - D1: Testing finale completo end-to-end
 
+## Documenti
+- `/app/GUIDA_APK_ANDROID.md` - Guida completa creazione APK + Google Play
+
 ## Test Status
 - iteration_9.json: 100% test passati (19/19) - PWA, traduzione categorie, mobile, regressione desktop
