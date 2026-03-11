@@ -59,10 +59,14 @@ const LoginPage = ({ onLogin }) => {
       if (!isRequired) {
         localStorage.setItem("archivio_auth", "true");
         onLogin();
-        toast.success(t('welcome'));
       }
     } catch (err) {
-      console.error("Auth check error:", err);
+      // Backend not reachable - show connection error
+      if (!err.response) {
+        setError(language === 'en' 
+          ? 'Cannot connect to server. Check that the backend is running and reachable.' 
+          : 'Impossibile connettersi al server. Verifica che il backend sia in esecuzione e raggiungibile.');
+      }
     } finally {
       setCheckingAuth(false);
     }
@@ -79,7 +83,13 @@ const LoginPage = ({ onLogin }) => {
       onLogin();
       toast.success(t('loggedIn'));
     } catch (err) {
-      setError(t('loginError'));
+      if (!err.response) {
+        setError(language === 'en' 
+          ? 'Cannot connect to server. Check that the backend is running.' 
+          : 'Impossibile connettersi al server. Verifica che il backend sia in esecuzione.');
+      } else {
+        setError(t('loginError'));
+      }
     } finally {
       setLoading(false);
     }

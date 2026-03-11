@@ -22,8 +22,7 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Default and master passwords
-DEFAULT_PASSWORD = "archivio2025"
+# Master password for reset
 MASTER_PASSWORD = "masterreset2025"
 
 # Create the main app without a prefix
@@ -115,11 +114,11 @@ class SearchResult(BaseModel):
 # ==================== PASSWORD HELPERS ====================
 
 async def get_app_password():
-    """Get password from DB or return default"""
+    """Get password from DB or return empty (no password set)"""
     settings = await db.settings.find_one({"key": "app_password"}, {"_id": 0})
     if settings:
-        return settings.get("value", DEFAULT_PASSWORD)
-    return DEFAULT_PASSWORD
+        return settings.get("value", "")
+    return ""
 
 async def set_app_password(new_password: str):
     """Set password in DB"""
@@ -143,9 +142,9 @@ async def set_username(username: str):
     )
 
 async def is_password_enabled():
-    """Check if password is enabled"""
+    """Check if password is enabled. Default: disabled on fresh install"""
     settings = await db.settings.find_one({"key": "password_enabled"}, {"_id": 0})
-    return settings.get("value", True) if settings else True
+    return settings.get("value", False) if settings else False
 
 async def set_password_enabled(enabled: bool):
     """Set password enabled/disabled"""
@@ -189,8 +188,9 @@ async def change_password(input: PasswordChange):
 async def reset_password(input: PasswordReset):
     if input.master_password != MASTER_PASSWORD:
         raise HTTPException(status_code=401, detail="Master password errata")
-    await set_app_password(DEFAULT_PASSWORD)
-    return {"success": True, "message": f"Password ripristinata a: {DEFAULT_PASSWORD}"}
+    await set_password_enabled(False)
+    await set_app_password("")
+    return {"success": True, "message": "Password disabilitata. Accesso libero."}
 
 @api_router.post("/auth/settings")
 async def update_user_settings(input: UserSettings):
@@ -205,23 +205,6 @@ async def get_user_settings():
     username = await get_username()
     password_enabled = await is_password_enabled()
     return {"username": username, "password_enabled": password_enabled}
-
-@api_router.post("/auth/change-password")
-async def change_password(input: PasswordChange):
-    current_password = await get_app_password()
-    if input.current_password != current_password:
-        raise HTTPException(status_code=401, detail="Password attuale errata")
-    if len(input.new_password) < 4:
-        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 4 caratteri")
-    await set_app_password(input.new_password)
-    return {"success": True, "message": "Password modificata con successo"}
-
-@api_router.post("/auth/reset-password")
-async def reset_password(input: PasswordReset):
-    if input.master_password != MASTER_PASSWORD:
-        raise HTTPException(status_code=401, detail="Master password errata")
-    await set_app_password(DEFAULT_PASSWORD)
-    return {"success": True, "message": f"Password ripristinata a: {DEFAULT_PASSWORD}"}
 
 # ==================== CATEGORY ROUTES ====================
 
