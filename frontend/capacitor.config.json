@@ -1,0 +1,12 @@
+{
+  "appId": "com.boxmanager.app",
+  "appName": "Box Manager",
+  "webDir": "build",
+  "android": {
+    "allowMixedContent": true
+  },
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  }
+}

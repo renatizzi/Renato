@@ -50,6 +50,14 @@ App per gestire un archivio di oggetti personali con numerazione univoca conteni
 - Categorie custom (non default) non vengono modificate
 - CategoriesPage si aggiorna dopo il cambio lingua
 
+### APK Android (Feb 2025)
+- Capacitor 6 configurato e integrato
+- Progetto Android generato con icone personalizzate (tutte le densità mipmap)
+- network_security_config.xml per traffico HTTP in rete locale
+- APK debug generato: `/app/BoxManager-debug.apk` (4.8 MB)
+- Script automatico: `/app/build_apk.sh <IP_BACKEND>`
+- Guida completa: `/app/GUIDA_APK_ANDROID.md`
+
 ## Credenziali
 - **Password**: archivio2025
 - **Master password**: masterreset2025
