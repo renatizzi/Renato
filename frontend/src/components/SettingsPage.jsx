@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { toast } from "sonner";
 import { Settings, Key, Download, Upload, RotateCcw, Save, AlertTriangle } from "lucide-react";
@@ -34,7 +34,7 @@ export const SettingsPage = ({ onLogout }) => {
     
     setLoading(true);
     try {
-      await axios.post(`${API}/auth/change-password`, {
+      await apiClient.post(`${API}/auth/change-password`, {
         current_password: currentPassword,
         new_password: newPassword
       });
@@ -59,7 +59,7 @@ export const SettingsPage = ({ onLogout }) => {
     
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/auth/reset-password`, {
+      const response = await apiClient.post(`${API}/auth/reset-password`, {
         master_password: masterPassword
       });
       toast.success(response.data.message);
@@ -74,7 +74,7 @@ export const SettingsPage = ({ onLogout }) => {
 
   const handleBackup = async () => {
     try {
-      const response = await axios.get(`${API}/backup`, {
+      const response = await apiClient.get(`${API}/backup`, {
         responseType: 'blob'
       });
       
@@ -112,7 +112,7 @@ export const SettingsPage = ({ onLogout }) => {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axios.post(`${API}/restore`, formData, {
+      const response = await apiClient.post(`${API}/restore`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       

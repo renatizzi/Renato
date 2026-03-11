@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
@@ -199,8 +199,8 @@ export const BoxDetail = () => {
   const fetchData = async () => {
     try {
       const [boxRes, categoriesRes] = await Promise.all([
-        axios.get(`${API}/boxes/${id}`),
-        axios.get(`${API}/categories`)
+        apiClient.get(`${API}/boxes/${id}`),
+        apiClient.get(`${API}/categories`)
       ]);
       setBox(boxRes.data);
       const locale = language === 'en' ? 'en' : 'it';
@@ -224,10 +224,10 @@ export const BoxDetail = () => {
     try {
       const payload = { name: itemForm.name, description: itemForm.description, image_data: itemForm.image_data || "" };
       if (editingItem) {
-        await axios.put(`${API}/boxes/${id}/items/${editingItem.id}`, payload);
+        await apiClient.put(`${API}/boxes/${id}/items/${editingItem.id}`, payload);
         toast.success(t('success'));
       } else {
-        await axios.post(`${API}/boxes/${id}/items`, payload);
+        await apiClient.post(`${API}/boxes/${id}/items`, payload);
         toast.success(t('success'));
       }
       setIsItemDialogOpen(false);
@@ -241,7 +241,7 @@ export const BoxDetail = () => {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      await axios.delete(`${API}/boxes/${id}/items/${itemId}`);
+      await apiClient.delete(`${API}/boxes/${id}/items/${itemId}`);
       toast.success(t('success'));
       fetchData();
     } catch (error) {
@@ -252,7 +252,7 @@ export const BoxDetail = () => {
   const handleEditBox = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API}/boxes/${id}`, boxForm);
+      await apiClient.put(`${API}/boxes/${id}`, boxForm);
       toast.success(t('success'));
       setIsEditBoxDialogOpen(false);
       fetchData();
@@ -504,7 +504,7 @@ export const BoxDetail = () => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel className="rounded-full">{t('cancel')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { axios.delete(`${API}/boxes/${id}`).then(() => { toast.success(t('success')); navigate("/boxes"); }); }} className="rounded-full bg-destructive">{t('delete')}</AlertDialogAction>
+                    <AlertDialogAction onClick={() => { apiClient.delete(`${API}/boxes/${id}`).then(() => { toast.success(t('success')); navigate("/boxes"); }); }} className="rounded-full bg-destructive">{t('delete')}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

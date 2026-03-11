@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ export const PasswordPage = ({ onLogout }) => {
 
   const fetchSettings = async () => {
     try {
-      const response = await axios.get(`${API}/auth/settings`);
+      const response = await apiClient.get(`${API}/auth/settings`);
       setUsername(response.data.username || "");
       setPasswordEnabled(response.data.password_enabled !== false);
     } catch (error) {
@@ -43,7 +43,7 @@ export const PasswordPage = ({ onLogout }) => {
   const handleSaveSettings = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API}/auth/settings`, {
+      await apiClient.post(`${API}/auth/settings`, {
         username: username,
         password_enabled: passwordEnabled
       });
@@ -73,7 +73,7 @@ export const PasswordPage = ({ onLogout }) => {
     
     setLoading(true);
     try {
-      await axios.post(`${API}/auth/change-password`, {
+      await apiClient.post(`${API}/auth/change-password`, {
         current_password: currentPassword,
         new_password: newPassword
       });
@@ -97,7 +97,7 @@ export const PasswordPage = ({ onLogout }) => {
     
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/auth/reset-password`, {
+      const response = await apiClient.post(`${API}/auth/reset-password`, {
         master_password: masterPassword
       });
       toast.success(response.data.message);

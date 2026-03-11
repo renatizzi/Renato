@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { getErrorMessage } from "@/components/ErrorBoundary";
@@ -83,7 +83,7 @@ export const SearchPage = () => {
     setLoading(true);
     setHasSearched(true);
     try {
-      const response = await axios.get(`${API}/search`, { params: { q: searchQuery.trim() } });
+      const response = await apiClient.get(`${API}/search`, { params: { q: searchQuery.trim() } });
       setResults(response.data);
     } catch (error) {
       toast.error(getErrorMessage(error, language));

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
@@ -54,7 +54,7 @@ export const BackupPage = () => {
   const handleBackup = async () => {
     setDownloading(true);
     try {
-      const response = await axios.get(`${API}/backup`, { responseType: 'blob' });
+      const response = await apiClient.get(`${API}/backup`, { responseType: 'blob' });
       const blob = new Blob([response.data], { type: 'application/json' });
       const suggestedName = `boxmanager_backup_${new Date().toISOString().slice(0,10)}.json`;
 
@@ -91,7 +91,7 @@ export const BackupPage = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      await axios.post(`${API}/restore`, formData, {
+      await apiClient.post(`${API}/restore`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

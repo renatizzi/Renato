@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
@@ -44,9 +44,9 @@ export const PrintPage = () => {
   const fetchData = async () => {
     try {
       const [boxesRes, categoriesRes, locationsRes] = await Promise.all([
-        axios.get(`${API}/boxes`),
-        axios.get(`${API}/categories`),
-        axios.get(`${API}/boxes/locations`)
+        apiClient.get(`${API}/boxes`),
+        apiClient.get(`${API}/categories`),
+        apiClient.get(`${API}/boxes/locations`)
       ]);
       setBoxes(boxesRes.data);
       setCategories(categoriesRes.data);
@@ -228,7 +228,7 @@ ${itemsHtml}
     try {
       const boxIds = selectedBoxes.length > 0 ? selectedBoxes : filteredBoxes.map(b => b.id);
       const params = { box_ids: boxIds.join(",") };
-      const response = await axios.get(`${API}/export/csv`, { params, responseType: 'blob' });
+      const response = await apiClient.get(`${API}/export/csv`, { params, responseType: 'blob' });
 
       const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
       const suggestedName = `boxmanager_export_${format(new Date(), 'yyyyMMdd')}.csv`;

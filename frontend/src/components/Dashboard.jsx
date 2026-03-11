@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API, APP_NAME } from "@/App";
 import { useLanguage } from "@/i18n";
 import { Folders, Package, Search, MoreHorizontal, ChevronRight } from "lucide-react";
@@ -21,7 +21,7 @@ export const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const statsRes = await axios.get(`${API}/stats`);
+      const statsRes = await apiClient.get(`${API}/stats`);
       setStats(statsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);

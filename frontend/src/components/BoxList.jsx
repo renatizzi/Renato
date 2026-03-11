@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
@@ -38,9 +38,9 @@ export const BoxList = () => {
   const fetchData = async () => {
     try {
       const [boxesRes, categoriesRes, locationsRes] = await Promise.all([
-        axios.get(`${API}/boxes`),
-        axios.get(`${API}/categories`),
-        axios.get(`${API}/boxes/locations`)
+        apiClient.get(`${API}/boxes`),
+        apiClient.get(`${API}/categories`),
+        apiClient.get(`${API}/boxes/locations`)
       ]);
       setBoxes(boxesRes.data);
       const locale = language === 'en' ? 'en' : 'it';
@@ -59,7 +59,7 @@ export const BoxList = () => {
       if (filterCategory !== "all") params.category_id = filterCategory;
       if (filterLocation !== "all") params.location = filterLocation;
       
-      const response = await axios.get(`${API}/boxes`, { params });
+      const response = await apiClient.get(`${API}/boxes`, { params });
       setBoxes(response.data);
     } catch (error) {
       toast.error(getErrorMessage(error, language));
@@ -76,10 +76,10 @@ export const BoxList = () => {
     e.preventDefault();
     try {
       if (editingBox) {
-        await axios.put(`${API}/boxes/${editingBox.id}`, formData);
+        await apiClient.put(`${API}/boxes/${editingBox.id}`, formData);
         toast.success(t('success'));
       } else {
-        await axios.post(`${API}/boxes`, formData);
+        await apiClient.post(`${API}/boxes`, formData);
         toast.success(t('success'));
       }
       setIsDialogOpen(false);
@@ -93,7 +93,7 @@ export const BoxList = () => {
 
   const handleDelete = async (boxId) => {
     try {
-      await axios.delete(`${API}/boxes/${boxId}`);
+      await apiClient.delete(`${API}/boxes/${boxId}`);
       toast.success(t('success'));
       fetchData();
     } catch (error) {

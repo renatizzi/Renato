@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { API } from "@/App";
 import { useLanguage } from "@/i18n";
 import { getErrorMessage, getErrorSuggestion } from "@/components/ErrorBoundary";
@@ -39,7 +39,7 @@ export const CategoriesPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${API}/categories`);
+      const response = await apiClient.get(`${API}/categories`);
       const locale = language === 'en' ? 'en' : 'it';
       const sorted = response.data.sort((a, b) => a.name.localeCompare(b.name, locale));
       setCategories(sorted);
@@ -61,9 +61,9 @@ export const CategoriesPage = () => {
       const colors = ["#3B82F6", "#F59E0B", "#6B7280", "#2C332B", "#10B981", "#EF4444", "#8C9E85", "#D4A373", "#E6B89C", "#4A6741", "#6B7280"];
       
       for (let i = 0; i < defaultCats.length; i++) {
-        await axios.post(`${API}/categories`, { name: defaultCats[i], color: colors[i % colors.length] });
+        await apiClient.post(`${API}/categories`, { name: defaultCats[i], color: colors[i % colors.length] });
       }
-      const response = await axios.get(`${API}/categories`);
+      const response = await apiClient.get(`${API}/categories`);
       const locale = language === 'en' ? 'en' : 'it';
       const sorted = response.data.sort((a, b) => a.name.localeCompare(b.name, locale));
       setCategories(sorted);
@@ -77,10 +77,10 @@ export const CategoriesPage = () => {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await axios.put(`${API}/categories/${editingCategory.id}`, formData);
+        await apiClient.put(`${API}/categories/${editingCategory.id}`, formData);
         toast.success(t('success'));
       } else {
-        await axios.post(`${API}/categories`, formData);
+        await apiClient.post(`${API}/categories`, formData);
         toast.success(t('success'));
       }
       setIsDialogOpen(false);
@@ -94,7 +94,7 @@ export const CategoriesPage = () => {
 
   const handleDelete = async (categoryId) => {
     try {
-      await axios.delete(`${API}/categories/${categoryId}`);
+      await apiClient.delete(`${API}/categories/${categoryId}`);
       toast.success(t('success'));
       fetchCategories();
     } catch (error) {

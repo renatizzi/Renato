@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import translations from './translations';
 import { translateCategory, isDefaultCategory } from './translations';
+import apiClient from '../services/apiClient';
 
 const LanguageContext = createContext();
 
@@ -14,30 +15,26 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem('boxmanager_language', language);
   }, [language]);
 
+  const API = process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : '/api';
+
   // Auto-translate default categories when language changes
   const translateCategories = useCallback(async (newLang) => {
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      const response = await fetch(`${backendUrl}/api/categories`);
-      if (!response.ok) return;
-      const cats = await response.json();
+      const response = await apiClient.get(`${API}/categories`);
+      const cats = response.data;
 
       for (const cat of cats) {
         if (isDefaultCategory(cat.name)) {
           const translated = translateCategory(cat.name, newLang);
           if (translated !== cat.name) {
-            await fetch(`${backendUrl}/api/categories/${cat.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: translated, color: cat.color })
-            });
+            await apiClient.put(`${API}/categories/${cat.id}`, { name: translated, color: cat.color });
           }
         }
       }
     } catch (err) {
       // Silent fail - non-critical operation
     }
-  }, []);
+  }, [API]);
 
   const handleSetLanguage = useCallback((newLang) => {
     setLanguage(newLang);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import apiClient from "@/services/apiClient";
 import { Toaster, toast } from "sonner";
 import { Package, Search, Folders, Home, Menu, Lock, LogOut, MoreHorizontal, Sun, Moon, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ const LoginPage = ({ onLogin }) => {
 
   const checkPasswordRequired = async () => {
     try {
-      const response = await axios.get(`${API}/auth/check`);
+      const response = await apiClient.get(`${API}/auth/check`);
       const isRequired = response.data.password_enabled !== false;
       
       if (!isRequired) {
@@ -78,7 +78,7 @@ const LoginPage = ({ onLogin }) => {
     setError("");
     
     try {
-      await axios.post(`${API}/auth/verify`, { password });
+      await apiClient.post(`${API}/auth/verify`, { password });
       localStorage.setItem("archivio_auth", "true");
       onLogin();
       toast.success(t('loggedIn'));
@@ -394,7 +394,7 @@ function AppWrapper() {
 
   const fetchUsername = async () => {
     try {
-      const response = await axios.get(`${API}/auth/settings`);
+      const response = await apiClient.get(`${API}/auth/settings`);
       setUsername(response.data.username || "");
     } catch (err) {
       console.error("Error fetching username:", err);
